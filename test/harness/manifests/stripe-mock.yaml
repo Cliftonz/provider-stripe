@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: 2026 The provider-stripe authors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: stripe-mock
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stripe-mock
+  namespace: stripe-mock
+spec:
+  selector:
+    matchLabels:
+      app: stripe-mock
+  template:
+    metadata:
+      labels:
+        app: stripe-mock
+    spec:
+      containers:
+        - name: stripe-mock
+          image: ${STRIPE_MOCK_IMAGE}
+          ports:
+            - containerPort: 12111
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stripe-mock
+  namespace: stripe-mock
+spec:
+  selector:
+    app: stripe-mock
+  ports:
+    - port: 12111

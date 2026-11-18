@@ -1,0 +1,457 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.20.1
+  name: creditgrants.billing.stripe.m.clifton.quest
+spec:
+  group: billing.stripe.m.clifton.quest
+  names:
+    categories:
+    - crossplane
+    - managed
+    - stripe
+    kind: CreditGrant
+    listKind: CreditGrantList
+    plural: creditgrants
+    singular: creditgrant
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
+      type: string
+    - jsonPath: .metadata.annotations.crossplane\.io/external-name
+      name: EXTERNAL-NAME
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          A credit grant is an API resource that documents the allocation of some billing credits to a customer.
+
+          Related guide: [Billing credits](https://docs.stripe.com/billing/subscriptions/usage-based/billing-credits)
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              forProvider:
+                properties:
+                  amount:
+                    description: Amount of this credit grant.
+                    properties:
+                      monetary:
+                        properties:
+                          currency:
+                            type: string
+                          value:
+                            format: int64
+                            type: integer
+                        required:
+                        - currency
+                        - value
+                        type: object
+                      type:
+                        enum:
+                        - monetary
+                        type: string
+                    required:
+                    - type
+                    type: object
+                    x-kubernetes-validations:
+                    - message: amount is immutable
+                      rule: self == oldSelf
+                  applicabilityConfig:
+                    description: Configuration specifying what this credit grant applies
+                      to. We currently only support `metered` prices that have a [Billing
+                      Meter](https://docs.stripe.com/api/billing/meter) attached to
+                      them.
+                    properties:
+                      scope:
+                        properties:
+                          priceType:
+                            enum:
+                            - metered
+                            type: string
+                          prices:
+                            items:
+                              properties:
+                                id:
+                                  type: string
+                              required:
+                              - id
+                              type: object
+                            type: array
+                        type: object
+                    required:
+                    - scope
+                    type: object
+                    x-kubernetes-validations:
+                    - message: applicabilityConfig is immutable
+                      rule: self == oldSelf
+                  category:
+                    description: The category of this credit grant. It defaults to
+                      `paid` if not specified.
+                    enum:
+                    - paid
+                    - promotional
+                    type: string
+                    x-kubernetes-validations:
+                    - message: category is immutable
+                      rule: self == oldSelf
+                  customer:
+                    description: ID of the customer receiving the billing credits.
+                    type: string
+                    x-kubernetes-validations:
+                    - message: customer is immutable
+                      rule: self == oldSelf
+                  customerAccount:
+                    description: ID of the account representing the customer receiving
+                      the billing credits.
+                    type: string
+                    x-kubernetes-validations:
+                    - message: customerAccount is immutable
+                      rule: self == oldSelf
+                  customerRef:
+                    description: A NamespacedReference to a named object.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                      namespace:
+                        description: Namespace of the referenced object
+                        type: string
+                      policy:
+                        description: Policies for referencing.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: |-
+                              Resolution specifies whether resolution of this reference is required.
+                              The default is 'Required', which means the reconcile will fail if the
+                              reference cannot be resolved. 'Optional' means this reference will be
+                              a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: |-
+                              Resolve specifies when this reference should be resolved. The default
+                              is 'IfNotPresent', which will attempt to resolve the reference only when
+                              the corresponding field is not present. Use 'Always' to resolve the
+                              reference on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
+                    required:
+                    - name
+                    type: object
+                  customerSelector:
+                    description: NamespacedSelector selects a namespaced object.
+                    properties:
+                      matchControllerRef:
+                        description: |-
+                          MatchControllerRef ensures an object with the same controller reference
+                          as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
+                        type: object
+                      namespace:
+                        description: Namespace for the selector
+                        type: string
+                      policy:
+                        description: Policies for selection.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: |-
+                              Resolution specifies whether resolution of this reference is required.
+                              The default is 'Required', which means the reconcile will fail if the
+                              reference cannot be resolved. 'Optional' means this reference will be
+                              a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: |-
+                              Resolve specifies when this reference should be resolved. The default
+                              is 'IfNotPresent', which will attempt to resolve the reference only when
+                              the corresponding field is not present. Use 'Always' to resolve the
+                              reference on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
+                    type: object
+                  effectiveAt:
+                    description: The time when the billing credits become effective-when
+                      they're eligible for use. It defaults to the current timestamp
+                      if not specified.
+                    format: int64
+                    type: integer
+                    x-kubernetes-validations:
+                    - message: effectiveAt is immutable
+                      rule: self == oldSelf
+                  expiresAt:
+                    description: The time when the billing credits expire. If not
+                      specified, the billing credits don't expire.
+                    format: int64
+                    type: integer
+                  metadata:
+                    additionalProperties:
+                      type: string
+                    description: Set of key-value pairs that you can attach to an
+                      object. You can use this to store additional information about
+                      the object (for example, cost basis) in a structured format.
+                    type: object
+                  name:
+                    description: A descriptive name shown in the Dashboard.
+                    type: string
+                    x-kubernetes-validations:
+                    - message: name is immutable
+                      rule: self == oldSelf
+                  priority:
+                    description: The desired priority for applying this credit grant.
+                      If not specified, it will be set to the default value of 50.
+                      The highest priority is 0 and the lowest is 100.
+                    format: int64
+                    type: integer
+                    x-kubernetes-validations:
+                    - message: priority is immutable
+                      rule: self == oldSelf
+                required:
+                - amount
+                - applicabilityConfig
+                type: object
+              managementPolicies:
+                default:
+                - '*'
+                description: |-
+                  THIS IS A BETA FIELD. It is on by default but can be opted out
+                  through a Crossplane feature flag.
+                  ManagementPolicies specify the array of actions Crossplane is allowed to
+                  take on the managed and external resources.
+                  See the design doc for more information: https://github.com/crossplane/crossplane/blob/499895a25d1a1a0ba1604944ef98ac7a1a71f197/design/design-doc-observe-only-resources.md?plain=1#L223
+                  and this one: https://github.com/crossplane/crossplane/blob/444267e84783136daa93568b364a5f01228cacbe/design/one-pager-ignore-changes.md
+                items:
+                  description: |-
+                    A ManagementAction represents an action that the Crossplane controllers
+                    can take on an external resource.
+                  enum:
+                  - Observe
+                  - Create
+                  - Update
+                  - Delete
+                  - LateInitialize
+                  - '*'
+                  type: string
+                type: array
+              providerConfigRef:
+                default:
+                  kind: ClusterProviderConfig
+                  name: default
+                description: |-
+                  ProviderConfigReference specifies how the provider that will be used to
+                  create, observe, update, and delete this managed resource should be
+                  configured.
+                properties:
+                  kind:
+                    description: Kind of the referenced object.
+                    type: string
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - kind
+                - name
+                type: object
+              writeConnectionSecretToRef:
+                description: |-
+                  WriteConnectionSecretToReference specifies the namespace and name of a
+                  Secret to which any connection details for this managed resource should
+                  be written. Connection details frequently include the endpoint, username,
+                  and password required to connect to the managed resource.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                required:
+                - name
+                type: object
+            required:
+            - forProvider
+            type: object
+          status:
+            properties:
+              atProvider:
+                properties:
+                  amount:
+                    x-kubernetes-preserve-unknown-fields: true
+                  applicabilityConfig:
+                    x-kubernetes-preserve-unknown-fields: true
+                  category:
+                    description: The category of this credit grant. This is for tracking
+                      purposes and isn't displayed to the customer.
+                    type: string
+                  created:
+                    description: Time at which the object was created. Measured in
+                      seconds since the Unix epoch.
+                    format: int64
+                    type: integer
+                  customer:
+                    description: ID of the customer receiving the billing credits.
+                    type: string
+                  customerAccount:
+                    description: ID of the account representing the customer receiving
+                      the billing credits
+                    type: string
+                  effectiveAt:
+                    description: The time when the billing credits become effective-when
+                      they're eligible for use.
+                    format: int64
+                    type: integer
+                  expiresAt:
+                    description: The time when the billing credits expire. If not
+                      present, the billing credits don't expire.
+                    format: int64
+                    type: integer
+                  id:
+                    description: Unique identifier for the object.
+                    type: string
+                  livemode:
+                    description: If the object exists in live mode, the value is `true`.
+                      If the object exists in test mode, the value is `false`.
+                    type: boolean
+                  metadata:
+                    additionalProperties:
+                      type: string
+                    description: Set of [key-value pairs](https://docs.stripe.com/api/metadata)
+                      that you can attach to an object. This can be useful for storing
+                      additional information about the object in a structured format.
+                    type: object
+                  name:
+                    description: A descriptive name shown in dashboard.
+                    type: string
+                  object:
+                    description: String representing the object's type. Objects of
+                      the same type share the same value.
+                    type: string
+                  priority:
+                    description: The priority for applying this credit grant. The
+                      highest priority is 0 and the lowest is 100.
+                    format: int64
+                    type: integer
+                  testClock:
+                    description: ID of the test clock this credit grant belongs to.
+                    type: string
+                  updated:
+                    description: Time at which the object was last updated. Measured
+                      in seconds since the Unix epoch.
+                    format: int64
+                    type: integer
+                  voidedAt:
+                    description: The time when this credit grant was voided. If not
+                      present, the credit grant hasn't been voided.
+                    format: int64
+                    type: integer
+                type: object
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        LastTransitionTime is the last time this condition transitioned from one
+                        status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        A Message containing details about this condition's last transition from
+                        one status to another, if any.
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        ObservedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      type: integer
+                    reason:
+                      description: A Reason for this condition's last transition from
+                        one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
+                      type: string
+                    type:
+                      description: |-
+                        Type of this condition. At most one of each condition type may apply to
+                        a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+              lastHandledReconcileAt:
+                description: |-
+                  LastHandledReconcileAt holds the value of the most recent
+                  reconcile-requested-at annotation token that the controller has
+                  processed. Users can compare this to the annotation to determine
+                  whether a reconcile request has been handled.
+                type: string
+              observedGeneration:
+                description: |-
+                  ObservedGeneration is the latest metadata.generation
+                  which resulted in either a ready state, or stalled due to error
+                  it can not recover from without human intervention.
+                format: int64
+                type: integer
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

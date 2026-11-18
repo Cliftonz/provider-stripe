@@ -1,0 +1,669 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.20.1
+  name: sources.core.stripe.m.clifton.quest
+spec:
+  group: core.stripe.m.clifton.quest
+  names:
+    categories:
+    - crossplane
+    - managed
+    - stripe
+    kind: Source
+    listKind: SourceList
+    plural: sources
+    singular: source
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
+      type: string
+    - jsonPath: .metadata.annotations.crossplane\.io/external-name
+      name: EXTERNAL-NAME
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          `Source` objects allow you to accept a variety of payment methods. They
+          represent a customer's payment instrument, and can be used with the Stripe API
+          just like a `Card` object: once chargeable, they can be charged, or can be
+          attached to customers.
+
+          Stripe doesn't recommend using the deprecated [Sources API](https://docs.stripe.com/api/sources).
+          We recommend that you adopt the [PaymentMethods API](https://docs.stripe.com/api/payment_methods).
+          This newer API provides access to our latest features and payment method types.
+
+          Related guides: [Sources API](https://docs.stripe.com/sources) and [Sources & Customers](https://docs.stripe.com/sources/customers).
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              forProvider:
+                properties:
+                  amount:
+                    description: Amount associated with the source. This is the amount
+                      for which the source will be chargeable once ready. Required
+                      for `single_use` sources. Not supported for `receiver` type
+                      sources, where charge amount may not be specified until funds
+                      land.
+                    format: int64
+                    type: integer
+                  currency:
+                    description: Three-letter [ISO code for the currency](https://stripe.com/docs/currencies)
+                      associated with the source. This is the currency for which the
+                      source will be chargeable once ready.
+                    type: string
+                    x-kubernetes-validations:
+                    - message: currency is immutable
+                      rule: self == oldSelf
+                  customer:
+                    description: The `Customer` to whom the original source is attached
+                      to. Must be set when the original source is not a `Source` (e.g.,
+                      `Card`).
+                    type: string
+                    x-kubernetes-validations:
+                    - message: customer is immutable
+                      rule: self == oldSelf
+                  customerRef:
+                    description: A NamespacedReference to a named object.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                      namespace:
+                        description: Namespace of the referenced object
+                        type: string
+                      policy:
+                        description: Policies for referencing.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: |-
+                              Resolution specifies whether resolution of this reference is required.
+                              The default is 'Required', which means the reconcile will fail if the
+                              reference cannot be resolved. 'Optional' means this reference will be
+                              a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: |-
+                              Resolve specifies when this reference should be resolved. The default
+                              is 'IfNotPresent', which will attempt to resolve the reference only when
+                              the corresponding field is not present. Use 'Always' to resolve the
+                              reference on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
+                    required:
+                    - name
+                    type: object
+                  customerSelector:
+                    description: NamespacedSelector selects a namespaced object.
+                    properties:
+                      matchControllerRef:
+                        description: |-
+                          MatchControllerRef ensures an object with the same controller reference
+                          as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
+                        type: object
+                      namespace:
+                        description: Namespace for the selector
+                        type: string
+                      policy:
+                        description: Policies for selection.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: |-
+                              Resolution specifies whether resolution of this reference is required.
+                              The default is 'Required', which means the reconcile will fail if the
+                              reference cannot be resolved. 'Optional' means this reference will be
+                              a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: |-
+                              Resolve specifies when this reference should be resolved. The default
+                              is 'IfNotPresent', which will attempt to resolve the reference only when
+                              the corresponding field is not present. Use 'Always' to resolve the
+                              reference on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
+                    type: object
+                  flow:
+                    description: The authentication `flow` of the source to create.
+                      `flow` is one of `redirect`, `receiver`, `code_verification`,
+                      `none`. It is generally inferred unless a type supports multiple
+                      flows.
+                    enum:
+                    - code_verification
+                    - none
+                    - receiver
+                    - redirect
+                    type: string
+                    x-kubernetes-validations:
+                    - message: flow is immutable
+                      rule: self == oldSelf
+                  mandate:
+                    description: Information about a mandate possibility attached
+                      to a source object (generally for bank debits) as well as its
+                      acceptance status.
+                    properties:
+                      acceptance:
+                        properties:
+                          date:
+                            format: int64
+                            type: integer
+                          ip:
+                            type: string
+                          offline:
+                            properties:
+                              contactEmail:
+                                type: string
+                            required:
+                            - contactEmail
+                            type: object
+                          online:
+                            properties:
+                              date:
+                                format: int64
+                                type: integer
+                              ip:
+                                type: string
+                              userAgent:
+                                type: string
+                            type: object
+                          status:
+                            enum:
+                            - accepted
+                            - pending
+                            - refused
+                            - revoked
+                            type: string
+                          type:
+                            enum:
+                            - offline
+                            - online
+                            type: string
+                          userAgent:
+                            type: string
+                        required:
+                        - status
+                        type: object
+                      amount:
+                        format: int64
+                        type: integer
+                      currency:
+                        type: string
+                      interval:
+                        enum:
+                        - one_time
+                        - scheduled
+                        - variable
+                        type: string
+                      notificationMethod:
+                        enum:
+                        - deprecated_none
+                        - email
+                        - manual
+                        - none
+                        - stripe_email
+                        type: string
+                    type: object
+                  metadata:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  originalSource:
+                    description: The source to share.
+                    type: string
+                    x-kubernetes-validations:
+                    - message: originalSource is immutable
+                      rule: self == oldSelf
+                  owner:
+                    description: Information about the owner of the payment instrument
+                      that may be used or required by particular source types.
+                    properties:
+                      address:
+                        properties:
+                          city:
+                            type: string
+                          country:
+                            type: string
+                          line1:
+                            type: string
+                          line2:
+                            type: string
+                          postalCode:
+                            type: string
+                          state:
+                            type: string
+                        type: object
+                      email:
+                        type: string
+                      name:
+                        type: string
+                      phone:
+                        type: string
+                    type: object
+                  receiver:
+                    description: Optional parameters for the receiver flow. Can be
+                      set only if the source is a receiver (`flow` is `receiver`).
+                    properties:
+                      refundAttributesMethod:
+                        enum:
+                        - email
+                        - manual
+                        - none
+                        type: string
+                    type: object
+                    x-kubernetes-validations:
+                    - message: receiver is immutable
+                      rule: self == oldSelf
+                  redirect:
+                    description: Parameters required for the redirect flow. Required
+                      if the source is authenticated by a redirect (`flow` is `redirect`).
+                    properties:
+                      returnUrl:
+                        type: string
+                    required:
+                    - returnUrl
+                    type: object
+                    x-kubernetes-validations:
+                    - message: redirect is immutable
+                      rule: self == oldSelf
+                  sourceOrder:
+                    description: Information about the items and shipping associated
+                      with the source. Required for transactional credit (for example
+                      Klarna) sources before you can charge it.
+                    properties:
+                      items:
+                        items:
+                          properties:
+                            amount:
+                              format: int64
+                              type: integer
+                            currency:
+                              type: string
+                            description:
+                              type: string
+                            parent:
+                              type: string
+                            quantity:
+                              format: int64
+                              type: integer
+                            type:
+                              enum:
+                              - discount
+                              - shipping
+                              - sku
+                              - tax
+                              type: string
+                          type: object
+                        type: array
+                      shipping:
+                        properties:
+                          address:
+                            properties:
+                              city:
+                                type: string
+                              country:
+                                type: string
+                              line1:
+                                type: string
+                              line2:
+                                type: string
+                              postalCode:
+                                type: string
+                              state:
+                                type: string
+                            required:
+                            - line1
+                            type: object
+                          carrier:
+                            type: string
+                          name:
+                            type: string
+                          phone:
+                            type: string
+                          trackingNumber:
+                            type: string
+                        required:
+                        - address
+                        type: object
+                    type: object
+                  statementDescriptor:
+                    description: An arbitrary string to be displayed on your customer's
+                      statement. As an example, if your website is `RunClub` and the
+                      item you're charging for is a race ticket, you may want to specify
+                      a `statement_descriptor` of `RunClub 5K race ticket.` While
+                      many payment types will display this information, some may not
+                      display it at all.
+                    type: string
+                    x-kubernetes-validations:
+                    - message: statementDescriptor is immutable
+                      rule: self == oldSelf
+                  token:
+                    description: An optional token used to create the source. When
+                      passed, token properties will override source parameters.
+                    type: string
+                    x-kubernetes-validations:
+                    - message: token is immutable
+                      rule: self == oldSelf
+                  type:
+                    description: The `type` of the source to create. Required unless
+                      `customer` and `original_source` are specified (see the [Cloning
+                      card Sources](https://docs.stripe.com/sources/connect#cloning-card-sources)
+                      guide)
+                    type: string
+                    x-kubernetes-validations:
+                    - message: type is immutable
+                      rule: self == oldSelf
+                  usage:
+                    enum:
+                    - reusable
+                    - single_use
+                    type: string
+                    x-kubernetes-validations:
+                    - message: usage is immutable
+                      rule: self == oldSelf
+                type: object
+              managementPolicies:
+                default:
+                - '*'
+                description: |-
+                  THIS IS A BETA FIELD. It is on by default but can be opted out
+                  through a Crossplane feature flag.
+                  ManagementPolicies specify the array of actions Crossplane is allowed to
+                  take on the managed and external resources.
+                  See the design doc for more information: https://github.com/crossplane/crossplane/blob/499895a25d1a1a0ba1604944ef98ac7a1a71f197/design/design-doc-observe-only-resources.md?plain=1#L223
+                  and this one: https://github.com/crossplane/crossplane/blob/444267e84783136daa93568b364a5f01228cacbe/design/one-pager-ignore-changes.md
+                items:
+                  description: |-
+                    A ManagementAction represents an action that the Crossplane controllers
+                    can take on an external resource.
+                  enum:
+                  - Observe
+                  - Create
+                  - Update
+                  - Delete
+                  - LateInitialize
+                  - '*'
+                  type: string
+                type: array
+              providerConfigRef:
+                default:
+                  kind: ClusterProviderConfig
+                  name: default
+                description: |-
+                  ProviderConfigReference specifies how the provider that will be used to
+                  create, observe, update, and delete this managed resource should be
+                  configured.
+                properties:
+                  kind:
+                    description: Kind of the referenced object.
+                    type: string
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - kind
+                - name
+                type: object
+              writeConnectionSecretToRef:
+                description: |-
+                  WriteConnectionSecretToReference specifies the namespace and name of a
+                  Secret to which any connection details for this managed resource should
+                  be written. Connection details frequently include the endpoint, username,
+                  and password required to connect to the managed resource.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                required:
+                - name
+                type: object
+            required:
+            - forProvider
+            type: object
+          status:
+            properties:
+              atProvider:
+                properties:
+                  achCreditTransfer:
+                    x-kubernetes-preserve-unknown-fields: true
+                  achDebit:
+                    x-kubernetes-preserve-unknown-fields: true
+                  acssDebit:
+                    x-kubernetes-preserve-unknown-fields: true
+                  alipay:
+                    x-kubernetes-preserve-unknown-fields: true
+                  allowRedisplay:
+                    description: This field indicates whether this payment method
+                      can be shown again to its customer in a checkout flow. Stripe
+                      products such as Checkout and Elements use this field to determine
+                      whether a payment method can be shown as a saved payment method
+                      in a checkout flow. The field defaults to “unspecified”.
+                    type: string
+                  amount:
+                    description: A positive integer in the smallest currency unit
+                      (that is, 100 cents for $1.00, or 1 for ¥1, Japanese Yen being
+                      a zero-decimal currency) representing the total amount associated
+                      with the source. This is the amount for which the source will
+                      be chargeable once ready. Required for `single_use` sources.
+                    format: int64
+                    type: integer
+                  auBecsDebit:
+                    x-kubernetes-preserve-unknown-fields: true
+                  bancontact:
+                    x-kubernetes-preserve-unknown-fields: true
+                  card:
+                    x-kubernetes-preserve-unknown-fields: true
+                  cardPresent:
+                    x-kubernetes-preserve-unknown-fields: true
+                  codeVerification:
+                    x-kubernetes-preserve-unknown-fields: true
+                  created:
+                    description: Time at which the object was created. Measured in
+                      seconds since the Unix epoch.
+                    format: int64
+                    type: integer
+                  currency:
+                    description: Three-letter [ISO code for the currency](https://stripe.com/docs/currencies)
+                      associated with the source. This is the currency for which the
+                      source will be chargeable once ready. Required for `single_use`
+                      sources.
+                    type: string
+                  customer:
+                    description: The ID of the customer to which this source is attached.
+                      This will not be present when the source has not been attached
+                      to a customer.
+                    type: string
+                  eps:
+                    x-kubernetes-preserve-unknown-fields: true
+                  flow:
+                    description: The authentication `flow` of the source. `flow` is
+                      one of `redirect`, `receiver`, `code_verification`, `none`.
+                    type: string
+                  giropay:
+                    x-kubernetes-preserve-unknown-fields: true
+                  id:
+                    description: Unique identifier for the object.
+                    type: string
+                  ideal:
+                    x-kubernetes-preserve-unknown-fields: true
+                  klarna:
+                    x-kubernetes-preserve-unknown-fields: true
+                  livemode:
+                    description: If the object exists in live mode, the value is `true`.
+                      If the object exists in test mode, the value is `false`.
+                    type: boolean
+                  metadata:
+                    additionalProperties:
+                      type: string
+                    description: Set of [key-value pairs](https://docs.stripe.com/api/metadata)
+                      that you can attach to an object. This can be useful for storing
+                      additional information about the object in a structured format.
+                    type: object
+                  multibanco:
+                    x-kubernetes-preserve-unknown-fields: true
+                  object:
+                    description: String representing the object's type. Objects of
+                      the same type share the same value.
+                    type: string
+                  owner:
+                    description: Information about the owner of the payment instrument
+                      that may be used or required by particular source types.
+                    x-kubernetes-preserve-unknown-fields: true
+                  p24:
+                    x-kubernetes-preserve-unknown-fields: true
+                  receiver:
+                    x-kubernetes-preserve-unknown-fields: true
+                  redirect:
+                    x-kubernetes-preserve-unknown-fields: true
+                  sepaDebit:
+                    x-kubernetes-preserve-unknown-fields: true
+                  sofort:
+                    x-kubernetes-preserve-unknown-fields: true
+                  sourceOrder:
+                    x-kubernetes-preserve-unknown-fields: true
+                  statementDescriptor:
+                    description: Extra information about a source. This will appear
+                      on your customer's statement every time you charge the source.
+                    type: string
+                  status:
+                    description: The status of the source, one of `canceled`, `chargeable`,
+                      `consumed`, `failed`, or `pending`. Only `chargeable` sources
+                      can be used to create a charge.
+                    type: string
+                  threeDSecure:
+                    x-kubernetes-preserve-unknown-fields: true
+                  type:
+                    description: The `type` of the source. The `type` is a payment
+                      method, one of `ach_credit_transfer`, `ach_debit`, `alipay`,
+                      `bancontact`, `card`, `card_present`, `eps`, `giropay`, `ideal`,
+                      `multibanco`, `klarna`, `p24`, `sepa_debit`, `sofort`, `three_d_secure`,
+                      or `wechat`. An additional hash is included on the source with
+                      a name matching this value. It contains additional information
+                      specific to the [payment method](https://docs.stripe.com/sources)
+                      used.
+                    type: string
+                  usage:
+                    description: Either `reusable` or `single_use`. Whether this source
+                      should be reusable or not. Some source types may or may not
+                      be reusable by construction, while others may leave the option
+                      at creation. If an incompatible value is passed, an error will
+                      be returned.
+                    type: string
+                  wechat:
+                    x-kubernetes-preserve-unknown-fields: true
+                type: object
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        LastTransitionTime is the last time this condition transitioned from one
+                        status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        A Message containing details about this condition's last transition from
+                        one status to another, if any.
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        ObservedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      type: integer
+                    reason:
+                      description: A Reason for this condition's last transition from
+                        one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
+                      type: string
+                    type:
+                      description: |-
+                        Type of this condition. At most one of each condition type may apply to
+                        a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+              lastHandledReconcileAt:
+                description: |-
+                  LastHandledReconcileAt holds the value of the most recent
+                  reconcile-requested-at annotation token that the controller has
+                  processed. Users can compare this to the annotation to determine
+                  whether a reconcile request has been handled.
+                type: string
+              observedGeneration:
+                description: |-
+                  ObservedGeneration is the latest metadata.generation
+                  which resulted in either a ready state, or stalled due to error
+                  it can not recover from without human intervention.
+                format: int64
+                type: integer
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

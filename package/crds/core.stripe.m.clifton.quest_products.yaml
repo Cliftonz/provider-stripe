@@ -1,0 +1,492 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.20.1
+  name: products.core.stripe.m.clifton.quest
+spec:
+  group: core.stripe.m.clifton.quest
+  names:
+    categories:
+    - crossplane
+    - managed
+    - stripe
+    kind: Product
+    listKind: ProductList
+    plural: products
+    singular: product
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
+      type: string
+    - jsonPath: .metadata.annotations.crossplane\.io/external-name
+      name: EXTERNAL-NAME
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          Products describe the specific goods or services you offer to your customers.
+          For example, you might offer a Standard and Premium version of your goods or service; each version would be a separate Product.
+          They can be used in conjunction with [Prices](https://docs.stripe.com/api#prices) to configure pricing in Payment Links, Checkout, and Subscriptions.
+
+          Related guides: [Set up a subscription](https://docs.stripe.com/billing/subscriptions/set-up-subscription),
+          [share a Payment Link](https://docs.stripe.com/payment-links),
+          [accept payments with Checkout](https://docs.stripe.com/payments/accept-a-payment#create-product-prices-upfront),
+          and more about [Products and Prices](https://docs.stripe.com/products-prices/overview)
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              forProvider:
+                properties:
+                  active:
+                    description: Whether the product is currently available for purchase.
+                      Defaults to `true`.
+                    type: boolean
+                  defaultPrice:
+                    description: The ID of the [Price](https://docs.stripe.com/api/prices)
+                      object that is the default price for this product.
+                    type: string
+                  defaultPriceData:
+                    description: Data used to generate a new [Price](https://docs.stripe.com/api/prices)
+                      object. This Price will be set as the default price for this
+                      product.
+                    properties:
+                      currency:
+                        type: string
+                      currencyOptions:
+                        additionalProperties:
+                          properties:
+                            customUnitAmount:
+                              properties:
+                                enabled:
+                                  type: boolean
+                                maximum:
+                                  format: int64
+                                  type: integer
+                                minimum:
+                                  format: int64
+                                  type: integer
+                                preset:
+                                  format: int64
+                                  type: integer
+                              required:
+                              - enabled
+                              type: object
+                            taxBehavior:
+                              enum:
+                              - exclusive
+                              - inclusive
+                              - unspecified
+                              type: string
+                            tiers:
+                              items:
+                                properties:
+                                  flatAmount:
+                                    format: int64
+                                    type: integer
+                                  flatAmountDecimal:
+                                    type: string
+                                  unitAmount:
+                                    format: int64
+                                    type: integer
+                                  unitAmountDecimal:
+                                    type: string
+                                  upTo:
+                                    x-kubernetes-preserve-unknown-fields: true
+                                required:
+                                - upTo
+                                type: object
+                              type: array
+                            unitAmount:
+                              format: int64
+                              type: integer
+                            unitAmountDecimal:
+                              type: string
+                          type: object
+                        type: object
+                      customUnitAmount:
+                        properties:
+                          enabled:
+                            type: boolean
+                          maximum:
+                            format: int64
+                            type: integer
+                          minimum:
+                            format: int64
+                            type: integer
+                          preset:
+                            format: int64
+                            type: integer
+                        required:
+                        - enabled
+                        type: object
+                      metadata:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      recurring:
+                        properties:
+                          interval:
+                            enum:
+                            - day
+                            - month
+                            - week
+                            - year
+                            type: string
+                          intervalCount:
+                            format: int64
+                            type: integer
+                        required:
+                        - interval
+                        type: object
+                      taxBehavior:
+                        enum:
+                        - exclusive
+                        - inclusive
+                        - unspecified
+                        type: string
+                      unitAmount:
+                        format: int64
+                        type: integer
+                      unitAmountDecimal:
+                        type: string
+                    required:
+                    - currency
+                    type: object
+                    x-kubernetes-validations:
+                    - message: defaultPriceData is immutable
+                      rule: self == oldSelf
+                  description:
+                    description: The product's description, meant to be displayable
+                      to the customer. Use this field to optionally store a long form
+                      explanation of the product being sold for your own rendering
+                      purposes.
+                    type: string
+                  id:
+                    description: An identifier will be randomly generated by Stripe.
+                      You can optionally override this ID, but the ID must be unique
+                      across all products in your Stripe account.
+                    type: string
+                    x-kubernetes-validations:
+                    - message: id is immutable
+                      rule: self == oldSelf
+                  images:
+                    description: A list of up to 8 URLs of images for this product,
+                      meant to be displayable to the customer.
+                    items:
+                      type: string
+                    type: array
+                  marketingFeatures:
+                    description: A list of up to 15 marketing features for this product.
+                      These are displayed in [pricing tables](https://docs.stripe.com/payments/checkout/pricing-table).
+                    items:
+                      properties:
+                        name:
+                          type: string
+                      required:
+                      - name
+                      type: object
+                    type: array
+                  metadata:
+                    additionalProperties:
+                      type: string
+                    description: Set of [key-value pairs](https://docs.stripe.com/api/metadata)
+                      that you can attach to an object. This can be useful for storing
+                      additional information about the object in a structured format.
+                      Individual keys can be unset by posting an empty value to them.
+                      All keys can be unset by posting an empty value to `metadata`.
+                    type: object
+                  name:
+                    description: The product's name, meant to be displayable to the
+                      customer.
+                    type: string
+                  packageDimensions:
+                    description: The dimensions of this product for shipping purposes.
+                    properties:
+                      height:
+                        type: number
+                      length:
+                        type: number
+                      weight:
+                        type: number
+                      width:
+                        type: number
+                    required:
+                    - height
+                    - length
+                    - weight
+                    - width
+                    type: object
+                  shippable:
+                    description: Whether this product is shipped (i.e., physical goods).
+                    type: boolean
+                  statementDescriptor:
+                    description: |-
+                      An arbitrary string to be displayed on your customer's credit card or bank statement. While most banks display this information consistently, some may display it incorrectly or not at all.
+
+                      This may be up to 22 characters. The statement description may not include `<`, `>`, `\`, `"`, `'` characters, and will appear on your customer's statement in capital letters. Non-ASCII characters are automatically stripped.
+                       It must contain at least one letter. Only used for subscription payments.
+                    type: string
+                  taxCode:
+                    description: A [tax code](https://docs.stripe.com/tax/tax-categories)
+                      ID.
+                    type: string
+                  taxDetails:
+                    description: Tax details for this product, including the [tax
+                      code](/tax/tax-codes) and an optional performance location.
+                    properties:
+                      performanceLocation:
+                        type: string
+                      taxCode:
+                        type: string
+                    type: object
+                  unitLabel:
+                    description: A label that represents units of this product. When
+                      set, this will be included in customers' receipts, invoices,
+                      Checkout, and the customer portal.
+                    type: string
+                  url:
+                    description: A URL of a publicly-accessible webpage for this product.
+                    type: string
+                required:
+                - name
+                type: object
+              managementPolicies:
+                default:
+                - '*'
+                description: |-
+                  THIS IS A BETA FIELD. It is on by default but can be opted out
+                  through a Crossplane feature flag.
+                  ManagementPolicies specify the array of actions Crossplane is allowed to
+                  take on the managed and external resources.
+                  See the design doc for more information: https://github.com/crossplane/crossplane/blob/499895a25d1a1a0ba1604944ef98ac7a1a71f197/design/design-doc-observe-only-resources.md?plain=1#L223
+                  and this one: https://github.com/crossplane/crossplane/blob/444267e84783136daa93568b364a5f01228cacbe/design/one-pager-ignore-changes.md
+                items:
+                  description: |-
+                    A ManagementAction represents an action that the Crossplane controllers
+                    can take on an external resource.
+                  enum:
+                  - Observe
+                  - Create
+                  - Update
+                  - Delete
+                  - LateInitialize
+                  - '*'
+                  type: string
+                type: array
+              providerConfigRef:
+                default:
+                  kind: ClusterProviderConfig
+                  name: default
+                description: |-
+                  ProviderConfigReference specifies how the provider that will be used to
+                  create, observe, update, and delete this managed resource should be
+                  configured.
+                properties:
+                  kind:
+                    description: Kind of the referenced object.
+                    type: string
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - kind
+                - name
+                type: object
+              writeConnectionSecretToRef:
+                description: |-
+                  WriteConnectionSecretToReference specifies the namespace and name of a
+                  Secret to which any connection details for this managed resource should
+                  be written. Connection details frequently include the endpoint, username,
+                  and password required to connect to the managed resource.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                required:
+                - name
+                type: object
+            required:
+            - forProvider
+            type: object
+          status:
+            properties:
+              atProvider:
+                properties:
+                  active:
+                    description: Whether the product is currently available for purchase.
+                    type: boolean
+                  created:
+                    description: Time at which the object was created. Measured in
+                      seconds since the Unix epoch.
+                    format: int64
+                    type: integer
+                  defaultPrice:
+                    description: The ID of the [Price](https://docs.stripe.com/api/prices)
+                      object that is the default price for this product.
+                    type: string
+                  description:
+                    description: The product's description, meant to be displayable
+                      to the customer. Use this field to optionally store a long form
+                      explanation of the product being sold for your own rendering
+                      purposes.
+                    type: string
+                  id:
+                    description: Unique identifier for the object.
+                    type: string
+                  images:
+                    description: A list of up to 8 URLs of images for this product,
+                      meant to be displayable to the customer.
+                    x-kubernetes-preserve-unknown-fields: true
+                  livemode:
+                    description: If the object exists in live mode, the value is `true`.
+                      If the object exists in test mode, the value is `false`.
+                    type: boolean
+                  marketingFeatures:
+                    description: A list of up to 15 marketing features for this product.
+                      These are displayed in [pricing tables](https://docs.stripe.com/payments/checkout/pricing-table).
+                    x-kubernetes-preserve-unknown-fields: true
+                  metadata:
+                    additionalProperties:
+                      type: string
+                    description: Set of [key-value pairs](https://docs.stripe.com/api/metadata)
+                      that you can attach to an object. This can be useful for storing
+                      additional information about the object in a structured format.
+                    type: object
+                  name:
+                    description: The product's name, meant to be displayable to the
+                      customer.
+                    type: string
+                  object:
+                    description: String representing the object's type. Objects of
+                      the same type share the same value.
+                    type: string
+                  packageDimensions:
+                    description: The dimensions of this product for shipping purposes.
+                    x-kubernetes-preserve-unknown-fields: true
+                  shippable:
+                    description: Whether this product is shipped (i.e., physical goods).
+                    type: boolean
+                  statementDescriptor:
+                    description: Extra information about a product which will appear
+                      on your customer's credit card statement. In the case that multiple
+                      products are billed at once, the first statement descriptor
+                      will be used. Only used for subscription payments.
+                    type: string
+                  taxCode:
+                    description: A [tax code](https://docs.stripe.com/tax/tax-categories)
+                      ID.
+                    type: string
+                  taxDetails:
+                    description: Tax details for this product, including the [tax
+                      code](/tax/tax-codes) and an optional performance location.
+                    x-kubernetes-preserve-unknown-fields: true
+                  unitLabel:
+                    description: A label that represents units of this product. When
+                      set, this will be included in customers' receipts, invoices,
+                      Checkout, and the customer portal.
+                    type: string
+                  updated:
+                    description: Time at which the object was last updated. Measured
+                      in seconds since the Unix epoch.
+                    format: int64
+                    type: integer
+                  url:
+                    description: A URL of a publicly-accessible webpage for this product.
+                    type: string
+                type: object
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        LastTransitionTime is the last time this condition transitioned from one
+                        status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        A Message containing details about this condition's last transition from
+                        one status to another, if any.
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        ObservedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      type: integer
+                    reason:
+                      description: A Reason for this condition's last transition from
+                        one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
+                      type: string
+                    type:
+                      description: |-
+                        Type of this condition. At most one of each condition type may apply to
+                        a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+              lastHandledReconcileAt:
+                description: |-
+                  LastHandledReconcileAt holds the value of the most recent
+                  reconcile-requested-at annotation token that the controller has
+                  processed. Users can compare this to the annotation to determine
+                  whether a reconcile request has been handled.
+                type: string
+              observedGeneration:
+                description: |-
+                  ObservedGeneration is the latest metadata.generation
+                  which resulted in either a ready state, or stalled due to error
+                  it can not recover from without human intervention.
+                format: int64
+                type: integer
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

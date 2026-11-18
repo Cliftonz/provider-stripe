@@ -1,0 +1,122 @@
+{
+  "paths": {
+    "/v1/billing/alerts": {}, "/v1/billing/credit_grants": {}, "/v1/billing/feedback_options": {}, "/v1/billing/meters": {},
+    "/v1/checkout/sessions": {}, "/v1/credit_notes": {}, "/v1/identity/verification_sessions": {}, "/v1/quotes": {},
+    "/v1/refunds": {}, "/v1/setup_intents": {}, "/v1/subscription_schedules": {}, "/v1/three_d_secure/authentications": {},
+    "/v1/topups": {}, "/v1/treasury/outbound_payments": {}, "/v1/treasury/outbound_transfers": {},
+    "/v1/products": {
+      "post": {"requestBody": {"content": {"application/x-www-form-urlencoded": {"schema": {"properties": {"name": {}, "active": {}, "type": {}, "expand": {}}}}}}}
+    },
+    "/v1/products/{id}": {
+      "get": {},
+      "post": {"requestBody": {"content": {"application/x-www-form-urlencoded": {"schema": {"properties": {"name": {}, "active": {}, "default_price": {}, "expand": {}}}}}}},
+      "delete": {}
+    },
+    "/v1/prices": {
+      "post": {"requestBody": {"content": {"application/x-www-form-urlencoded": {"schema": {"properties": {"currency": {}, "active": {}, "nickname": {}}}}}}}
+    },
+    "/v1/prices/{price}": {
+      "get": {},
+      "post": {"requestBody": {"content": {"application/x-www-form-urlencoded": {"schema": {"properties": {"active": {}, "nickname": {}}}}}}}
+    },
+    "/v1/treasury/inbound_transfers": {
+      "post": {"requestBody": {"content": {"application/x-www-form-urlencoded": {"schema": {"properties": {"amount": {}}}}}}}
+    },
+    "/v1/treasury/inbound_transfers/{id}": {
+      "get": {}
+    },
+    "/v1/treasury/inbound_transfers/{inbound_transfer}/cancel": {
+      "post": {}
+    },
+    "/v1/payouts": {
+      "post": {"requestBody": {"content": {"application/x-www-form-urlencoded": {"schema": {"properties": {"amount": {}}}}}}}
+    },
+    "/v1/payouts/{payout}": {
+      "get": {}
+    },
+    "/v1/payouts/{payout}/cancel": {
+      "get": {}
+    },
+    "/v1/charges": {
+      "post": {"requestBody": {"content": {"application/x-www-form-urlencoded": {"schema": {"properties": {"amount": {}, "description": {}}}}}}}
+    },
+    "/v1/charges/{charge}": {
+      "get": {},
+      "post": {"requestBody": {"content": {"application/x-www-form-urlencoded": {"schema": {"properties": {"description": {}}}}}}}
+    },
+    "/v1/charges/{charge}/dispute/close": {
+      "post": {}
+    },
+    "/v1/test_helpers/test_clocks": {
+      "post": {"requestBody": {"content": {"application/x-www-form-urlencoded": {"schema": {"properties": {"frozen_time": {}}}}}}}
+    },
+    "/v1/test_helpers/test_clocks/{test_clock}": {
+      "get": {},
+      "delete": {}
+    },
+    "/v1/invoices": {
+      "post": {"requestBody": {"content": {"application/x-www-form-urlencoded": {"schema": {"properties": {"customer": {}}}}}}}
+    },
+    "/v1/invoices/{invoice}": {
+      "get": {},
+      "delete": {}
+    },
+    "/v1/invoices/{invoice}/void": {
+      "post": {}
+    },
+    "/v1/issuing/cards": {
+      "post": {"requestBody": {"content": {"application/x-www-form-urlencoded": {"schema": {"properties": {"currency": {}}}}}}}
+    },
+    "/v1/issuing/cards/{card}": {
+      "get": {}
+    },
+    "/v1/issuing/cardholders": {
+      "post": {"requestBody": {"content": {"application/x-www-form-urlencoded": {"schema": {"properties": {"name": {}}}}}}}
+    },
+    "/v1/issuing/cardholders/{cardholder}": {
+      "get": {}
+    },
+    "/v1/apps/installs": {
+      "post": {"requestBody": {"content": {"application/x-www-form-urlencoded": {"schema": {"properties": {"app": {}}}}}}}
+    },
+    "/v1/apps/installs/{id}": {
+      "get": {}
+    },
+    "/v1/tokens": {
+      "post": {"requestBody": {"content": {"application/x-www-form-urlencoded": {"schema": {"properties": {"card": {}}}}}}}
+    },
+    "/v1/tokens/{token}": {
+      "get": {}
+    },
+    "/v1/files": {
+      "post": {"requestBody": {"content": {"multipart/form-data": {"schema": {"properties": {"file": {}}}}}}}
+    },
+    "/v1/files/{file}": {
+      "get": {}
+    },
+    "/v1/balance_transactions": {
+      "get": {}
+    },
+    "/v1/balance_transactions/{id}": {
+      "get": {}
+    },
+    "/v1/account_links": {
+      "post": {"requestBody": {"content": {"application/x-www-form-urlencoded": {"schema": {"properties": {"account": {}}}}}}}
+    },
+    "/v1/ephemeral_keys": {
+      "post": {"requestBody": {"content": {"application/x-www-form-urlencoded": {"schema": {"properties": {"customer": {}}}}}}}
+    },
+    "/v1/ephemeral_keys/{key}": {
+      "delete": {}
+    },
+    "/v1/customers/{customer}/sources": {
+      "post": {"requestBody": {"content": {"application/x-www-form-urlencoded": {"schema": {"properties": {"source": {}}}}}}}
+    },
+    "/v1/customers/{customer}/sources/{id}": {
+      "get": {}
+    },
+    "/v1/customers": {}, "/v1/payment_methods": {}, "/v1/tax_rates": {}, "/v1/treasury/financial_accounts": {}, "/v1/subscriptions": {},
+    "/v1/terminal/locations": {}, "/v1/accounts": {}, "/v1/payment_intents": {}, "/v1/payment_method_configurations": {},
+    "/v1/issuing/personalization_designs": {}, "/v1/radar/value_lists": {}, "/v1/climate/orders": {}, "/v1/plans": {}
+  }
+}

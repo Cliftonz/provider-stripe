@@ -1,0 +1,429 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.20.1
+  name: disputes.issuing.stripe.m.clifton.quest
+spec:
+  group: issuing.stripe.m.clifton.quest
+  names:
+    categories:
+    - crossplane
+    - managed
+    - stripe
+    kind: Dispute
+    listKind: DisputeList
+    plural: disputes
+    singular: dispute
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
+      type: string
+    - jsonPath: .metadata.annotations.crossplane\.io/external-name
+      name: EXTERNAL-NAME
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          As a [card issuer](https://docs.stripe.com/issuing), you can dispute transactions that the cardholder does not recognize, suspects to be fraudulent, or has other issues with.
+
+          Related guide: [Issuing disputes](https://docs.stripe.com/issuing/purchases/disputes)
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              forProvider:
+                properties:
+                  amount:
+                    description: The dispute amount in the card's currency and in
+                      the [smallest currency unit](https://docs.stripe.com/currencies#zero-decimal).
+                      If not set, defaults to the full transaction amount.
+                    format: int64
+                    type: integer
+                  evidence:
+                    description: Evidence provided for the dispute.
+                    properties:
+                      canceled:
+                        properties:
+                          additionalDocumentation:
+                            type: string
+                          canceledAt:
+                            format: int64
+                            type: integer
+                          cancellationPolicyProvided:
+                            type: boolean
+                          cancellationReason:
+                            type: string
+                          expectedAt:
+                            format: int64
+                            type: integer
+                          explanation:
+                            type: string
+                          productDescription:
+                            type: string
+                          productType:
+                            enum:
+                            - ""
+                            - merchandise
+                            - service
+                            type: string
+                          returnStatus:
+                            enum:
+                            - ""
+                            - merchant_rejected
+                            - successful
+                            type: string
+                          returnedAt:
+                            format: int64
+                            type: integer
+                        type: object
+                      duplicate:
+                        properties:
+                          additionalDocumentation:
+                            type: string
+                          cardStatement:
+                            type: string
+                          cashReceipt:
+                            type: string
+                          checkImage:
+                            type: string
+                          explanation:
+                            type: string
+                          originalTransaction:
+                            type: string
+                        type: object
+                      fraudulent:
+                        properties:
+                          additionalDocumentation:
+                            type: string
+                          explanation:
+                            type: string
+                        type: object
+                      merchandiseNotAsDescribed:
+                        properties:
+                          additionalDocumentation:
+                            type: string
+                          explanation:
+                            type: string
+                          receivedAt:
+                            format: int64
+                            type: integer
+                          returnDescription:
+                            type: string
+                          returnStatus:
+                            enum:
+                            - ""
+                            - merchant_rejected
+                            - successful
+                            type: string
+                          returnedAt:
+                            format: int64
+                            type: integer
+                        type: object
+                      noValidAuthorization:
+                        properties:
+                          additionalDocumentation:
+                            type: string
+                          explanation:
+                            type: string
+                        type: object
+                      notReceived:
+                        properties:
+                          additionalDocumentation:
+                            type: string
+                          expectedAt:
+                            format: int64
+                            type: integer
+                          explanation:
+                            type: string
+                          productDescription:
+                            type: string
+                          productType:
+                            enum:
+                            - ""
+                            - merchandise
+                            - service
+                            type: string
+                        type: object
+                      other:
+                        properties:
+                          additionalDocumentation:
+                            type: string
+                          explanation:
+                            type: string
+                          productDescription:
+                            type: string
+                          productType:
+                            enum:
+                            - ""
+                            - merchandise
+                            - service
+                            type: string
+                        type: object
+                      reason:
+                        enum:
+                        - canceled
+                        - duplicate
+                        - fraudulent
+                        - merchandise_not_as_described
+                        - no_valid_authorization
+                        - not_received
+                        - other
+                        - service_not_as_described
+                        type: string
+                      serviceNotAsDescribed:
+                        properties:
+                          additionalDocumentation:
+                            type: string
+                          canceledAt:
+                            format: int64
+                            type: integer
+                          cancellationReason:
+                            type: string
+                          explanation:
+                            type: string
+                          receivedAt:
+                            format: int64
+                            type: integer
+                        type: object
+                    type: object
+                  metadata:
+                    additionalProperties:
+                      type: string
+                    description: Set of [key-value pairs](https://docs.stripe.com/api/metadata)
+                      that you can attach to an object. This can be useful for storing
+                      additional information about the object in a structured format.
+                      Individual keys can be unset by posting an empty value to them.
+                      All keys can be unset by posting an empty value to `metadata`.
+                    type: object
+                  transaction:
+                    description: The ID of the issuing transaction to create a dispute
+                      for. For transaction on Treasury FinancialAccounts, use `treasury.received_debit`.
+                    type: string
+                    x-kubernetes-validations:
+                    - message: transaction is immutable
+                      rule: self == oldSelf
+                  treasury:
+                    description: Params for disputes related to Treasury FinancialAccounts
+                    properties:
+                      receivedDebit:
+                        type: string
+                    required:
+                    - receivedDebit
+                    type: object
+                    x-kubernetes-validations:
+                    - message: treasury is immutable
+                      rule: self == oldSelf
+                type: object
+              managementPolicies:
+                default:
+                - '*'
+                description: |-
+                  THIS IS A BETA FIELD. It is on by default but can be opted out
+                  through a Crossplane feature flag.
+                  ManagementPolicies specify the array of actions Crossplane is allowed to
+                  take on the managed and external resources.
+                  See the design doc for more information: https://github.com/crossplane/crossplane/blob/499895a25d1a1a0ba1604944ef98ac7a1a71f197/design/design-doc-observe-only-resources.md?plain=1#L223
+                  and this one: https://github.com/crossplane/crossplane/blob/444267e84783136daa93568b364a5f01228cacbe/design/one-pager-ignore-changes.md
+                items:
+                  description: |-
+                    A ManagementAction represents an action that the Crossplane controllers
+                    can take on an external resource.
+                  enum:
+                  - Observe
+                  - Create
+                  - Update
+                  - Delete
+                  - LateInitialize
+                  - '*'
+                  type: string
+                type: array
+              providerConfigRef:
+                default:
+                  kind: ClusterProviderConfig
+                  name: default
+                description: |-
+                  ProviderConfigReference specifies how the provider that will be used to
+                  create, observe, update, and delete this managed resource should be
+                  configured.
+                properties:
+                  kind:
+                    description: Kind of the referenced object.
+                    type: string
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - kind
+                - name
+                type: object
+              writeConnectionSecretToRef:
+                description: |-
+                  WriteConnectionSecretToReference specifies the namespace and name of a
+                  Secret to which any connection details for this managed resource should
+                  be written. Connection details frequently include the endpoint, username,
+                  and password required to connect to the managed resource.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                required:
+                - name
+                type: object
+            required:
+            - forProvider
+            type: object
+          status:
+            properties:
+              atProvider:
+                properties:
+                  amount:
+                    description: Disputed amount in the card's currency and in the
+                      [smallest currency unit](https://docs.stripe.com/currencies#zero-decimal).
+                      Usually the amount of the `transaction`, but can differ (usually
+                      because of currency fluctuation).
+                    format: int64
+                    type: integer
+                  balanceTransactions:
+                    description: List of balance transactions associated with the
+                      dispute.
+                    x-kubernetes-preserve-unknown-fields: true
+                  created:
+                    description: Time at which the object was created. Measured in
+                      seconds since the Unix epoch.
+                    format: int64
+                    type: integer
+                  currency:
+                    description: The currency the `transaction` was made in.
+                    type: string
+                  evidence:
+                    x-kubernetes-preserve-unknown-fields: true
+                  id:
+                    description: Unique identifier for the object.
+                    type: string
+                  livemode:
+                    description: If the object exists in live mode, the value is `true`.
+                      If the object exists in test mode, the value is `false`.
+                    type: boolean
+                  lossReason:
+                    description: The enum that describes the dispute loss outcome.
+                      If the dispute is not lost, this field will be absent. New enum
+                      values may be added in the future, so be sure to handle unknown
+                      values.
+                    type: string
+                  metadata:
+                    additionalProperties:
+                      type: string
+                    description: Set of [key-value pairs](https://docs.stripe.com/api/metadata)
+                      that you can attach to an object. This can be useful for storing
+                      additional information about the object in a structured format.
+                    type: object
+                  object:
+                    description: String representing the object's type. Objects of
+                      the same type share the same value.
+                    type: string
+                  status:
+                    description: Current status of the dispute.
+                    type: string
+                  transaction:
+                    description: The transaction being disputed.
+                    type: string
+                  treasury:
+                    description: '[Treasury](https://docs.stripe.com/api/treasury)
+                      details related to this dispute if it was created on a [FinancialAccount](https://docs.stripe.com/api/treasury/financial_accounts)'
+                    x-kubernetes-preserve-unknown-fields: true
+                type: object
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        LastTransitionTime is the last time this condition transitioned from one
+                        status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        A Message containing details about this condition's last transition from
+                        one status to another, if any.
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        ObservedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      type: integer
+                    reason:
+                      description: A Reason for this condition's last transition from
+                        one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
+                      type: string
+                    type:
+                      description: |-
+                        Type of this condition. At most one of each condition type may apply to
+                        a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+              lastHandledReconcileAt:
+                description: |-
+                  LastHandledReconcileAt holds the value of the most recent
+                  reconcile-requested-at annotation token that the controller has
+                  processed. Users can compare this to the annotation to determine
+                  whether a reconcile request has been handled.
+                type: string
+              observedGeneration:
+                description: |-
+                  ObservedGeneration is the latest metadata.generation
+                  which resulted in either a ready state, or stalled due to error
+                  it can not recover from without human intervention.
+                format: int64
+                type: integer
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

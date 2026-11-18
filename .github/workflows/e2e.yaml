@@ -1,0 +1,50 @@
+# SPDX-FileCopyrightText: 2026 The provider-stripe authors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+name: End to End Testing
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: kind runs stripe-mock in the cluster; saas uses the STRIPE_API_KEY test-mode secret
+        type: choice
+        options: [kind, saas]
+        default: kind
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    if: >-
+      github.event_name != 'pull_request'
+      || (github.event.action != 'labeled' || github.event.label.name == 'run-e2e')
+      && (startsWith(github.head_ref, 'spec/')
+      || contains(github.event.pull_request.labels.*.name, 'run-e2e'))
+    concurrency:
+      group: e2e-${{ github.head_ref || github.ref }}
+      cancel-in-progress: true
+    environment: ${{ inputs.target == 'saas' && 'stripe-test' || '' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      E2E_TARGET: ${{ inputs.target || 'kind' }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+          submodules: true
+          fetch-depth: 0
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        with:
+          go-version-file: go.mod
+      - name: Start harness
+        env:
+          STRIPE_API_KEY: ${{ inputs.target == 'saas' && secrets.STRIPE_API_KEY || '' }}
+        run: test/harness/up.sh
+      - name: Run e2e
+        run: test/harness/e2e.sh

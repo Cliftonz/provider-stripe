@@ -1,0 +1,770 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.20.1
+  name: charges.core.stripe.m.clifton.quest
+spec:
+  group: core.stripe.m.clifton.quest
+  names:
+    categories:
+    - crossplane
+    - managed
+    - stripe
+    kind: Charge
+    listKind: ChargeList
+    plural: charges
+    singular: charge
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
+      type: string
+    - jsonPath: .metadata.annotations.crossplane\.io/external-name
+      name: EXTERNAL-NAME
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          The `Charge` object represents a single attempt to move money into your Stripe account.
+          PaymentIntent confirmation is the most common way to create Charges, but [Account Debits](https://docs.stripe.com/connect/account-debits) may also create Charges.
+          The create and capture methods are deprecated and will be deleted soon. If your integration uses either of them, you need to update it to use a different payment flow, such as [the Payment Intents API](https://docs.stripe.com/payments/payment-intents).
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              forProvider:
+                properties:
+                  amount:
+                    description: Amount intended to be collected by this payment.
+                      A positive integer representing how much to charge in the [smallest
+                      currency unit](https://docs.stripe.com/currencies#zero-decimal)
+                      (e.g., 100 cents to charge $1.00 or 100 to charge ¥100, a zero-decimal
+                      currency). The minimum amount is $0.50 US or [equivalent in
+                      charge currency](https://docs.stripe.com/currencies#minimum-and-maximum-charge-amounts).
+                      The amount value supports up to eight digits (e.g., a value
+                      of 99999999 for a USD charge of $999,999.99).
+                    format: int64
+                    type: integer
+                    x-kubernetes-validations:
+                    - message: amount is immutable
+                      rule: self == oldSelf
+                  applicationFee:
+                    format: int64
+                    type: integer
+                    x-kubernetes-validations:
+                    - message: applicationFee is immutable
+                      rule: self == oldSelf
+                  applicationFeeAmount:
+                    description: A fee in cents (or local equivalent) that will be
+                      applied to the charge and transferred to the application owner's
+                      Stripe account. The request must be made with an OAuth key or
+                      the `Stripe-Account` header in order to take an application
+                      fee. For more information, see the application fees [documentation](https://docs.stripe.com/connect/direct-charges#collect-fees).
+                    format: int64
+                    type: integer
+                    x-kubernetes-validations:
+                    - message: applicationFeeAmount is immutable
+                      rule: self == oldSelf
+                  capture:
+                    description: Whether to immediately capture the charge. Defaults
+                      to `true`. When `false`, the charge issues an authorization
+                      (or pre-authorization), and will need to be [captured](https://docs.stripe.com/api#capture_charge)
+                      later. Uncaptured charges expire after a set number of days
+                      (7 by default). For more information, see the [authorizing charges
+                      and settling later](https://docs.stripe.com/charges/placing-a-hold)
+                      documentation.
+                    type: boolean
+                    x-kubernetes-validations:
+                    - message: capture is immutable
+                      rule: self == oldSelf
+                  card:
+                    description: A token, like the ones returned by [Stripe.js](https://stripe.com/docs/js).
+                    x-kubernetes-preserve-unknown-fields: true
+                  currency:
+                    description: Three-letter [ISO currency code](https://www.iso.org/iso-4217-currency-codes.html),
+                      in lowercase. Must be a [supported currency](https://stripe.com/docs/currencies).
+                    type: string
+                    x-kubernetes-validations:
+                    - message: currency is immutable
+                      rule: self == oldSelf
+                  customer:
+                    description: The ID of an existing customer that will be charged
+                      in this request.
+                    type: string
+                  customerRef:
+                    description: A NamespacedReference to a named object.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                      namespace:
+                        description: Namespace of the referenced object
+                        type: string
+                      policy:
+                        description: Policies for referencing.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: |-
+                              Resolution specifies whether resolution of this reference is required.
+                              The default is 'Required', which means the reconcile will fail if the
+                              reference cannot be resolved. 'Optional' means this reference will be
+                              a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: |-
+                              Resolve specifies when this reference should be resolved. The default
+                              is 'IfNotPresent', which will attempt to resolve the reference only when
+                              the corresponding field is not present. Use 'Always' to resolve the
+                              reference on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
+                    required:
+                    - name
+                    type: object
+                  customerSelector:
+                    description: NamespacedSelector selects a namespaced object.
+                    properties:
+                      matchControllerRef:
+                        description: |-
+                          MatchControllerRef ensures an object with the same controller reference
+                          as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
+                        type: object
+                      namespace:
+                        description: Namespace for the selector
+                        type: string
+                      policy:
+                        description: Policies for selection.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: |-
+                              Resolution specifies whether resolution of this reference is required.
+                              The default is 'Required', which means the reconcile will fail if the
+                              reference cannot be resolved. 'Optional' means this reference will be
+                              a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: |-
+                              Resolve specifies when this reference should be resolved. The default
+                              is 'IfNotPresent', which will attempt to resolve the reference only when
+                              the corresponding field is not present. Use 'Always' to resolve the
+                              reference on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
+                    type: object
+                  description:
+                    description: An arbitrary string which you can attach to a `Charge`
+                      object. It is displayed when in the web interface alongside
+                      the charge. Note that if you use Stripe to send automatic email
+                      receipts to your customers, your receipt emails will include
+                      the `description` of the charge(s) that they are describing.
+                    type: string
+                  destination:
+                    x-kubernetes-preserve-unknown-fields: true
+                  fraudDetails:
+                    description: A set of key-value pairs you can attach to a charge
+                      giving information about its riskiness. If you believe a charge
+                      is fraudulent, include a `user_report` key with a value of `fraudulent`.
+                      If you believe a charge is safe, include a `user_report` key
+                      with a value of `safe`. Stripe will use the information you
+                      send to improve our fraud detection algorithms.
+                    properties:
+                      userReport:
+                        enum:
+                        - ""
+                        - fraudulent
+                        - safe
+                        type: string
+                    required:
+                    - userReport
+                    type: object
+                  metadata:
+                    additionalProperties:
+                      type: string
+                    description: Set of [key-value pairs](https://docs.stripe.com/api/metadata)
+                      that you can attach to an object. This can be useful for storing
+                      additional information about the object in a structured format.
+                      Individual keys can be unset by posting an empty value to them.
+                      All keys can be unset by posting an empty value to `metadata`.
+                    type: object
+                  onBehalfOf:
+                    description: The Stripe account ID for which these funds are intended.
+                      You can specify the business of record as the connected account
+                      using the `on_behalf_of` attribute on the charge. For details,
+                      see [Creating Separate Charges and Transfers](https://docs.stripe.com/connect/separate-charges-and-transfers#settlement-merchant).
+                    type: string
+                    x-kubernetes-validations:
+                    - message: onBehalfOf is immutable
+                      rule: self == oldSelf
+                  onBehalfOfRef:
+                    description: A NamespacedReference to a named object.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                      namespace:
+                        description: Namespace of the referenced object
+                        type: string
+                      policy:
+                        description: Policies for referencing.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: |-
+                              Resolution specifies whether resolution of this reference is required.
+                              The default is 'Required', which means the reconcile will fail if the
+                              reference cannot be resolved. 'Optional' means this reference will be
+                              a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: |-
+                              Resolve specifies when this reference should be resolved. The default
+                              is 'IfNotPresent', which will attempt to resolve the reference only when
+                              the corresponding field is not present. Use 'Always' to resolve the
+                              reference on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
+                    required:
+                    - name
+                    type: object
+                  onBehalfOfSelector:
+                    description: NamespacedSelector selects a namespaced object.
+                    properties:
+                      matchControllerRef:
+                        description: |-
+                          MatchControllerRef ensures an object with the same controller reference
+                          as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
+                        type: object
+                      namespace:
+                        description: Namespace for the selector
+                        type: string
+                      policy:
+                        description: Policies for selection.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: |-
+                              Resolution specifies whether resolution of this reference is required.
+                              The default is 'Required', which means the reconcile will fail if the
+                              reference cannot be resolved. 'Optional' means this reference will be
+                              a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: |-
+                              Resolve specifies when this reference should be resolved. The default
+                              is 'IfNotPresent', which will attempt to resolve the reference only when
+                              the corresponding field is not present. Use 'Always' to resolve the
+                              reference on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
+                    type: object
+                  radarOptions:
+                    description: Options to configure Radar. See [Radar Session](https://docs.stripe.com/radar/radar-session)
+                      for more information.
+                    properties:
+                      session:
+                        type: string
+                    type: object
+                    x-kubernetes-validations:
+                    - message: radarOptions is immutable
+                      rule: self == oldSelf
+                  receiptEmail:
+                    description: The email address to which this charge's [receipt](https://docs.stripe.com/dashboard/receipts)
+                      will be sent. The receipt will not be sent until the charge
+                      is paid, and no receipts will be sent for test mode charges.
+                      If this charge is for a [Customer](https://docs.stripe.com/api/customers/object),
+                      the email address specified here will override the customer's
+                      email address. If `receipt_email` is specified for a charge
+                      in live mode, a receipt will be sent regardless of your [email
+                      settings](https://dashboard.stripe.com/account/emails).
+                    type: string
+                  shipping:
+                    description: Shipping information for the charge. Helps prevent
+                      fraud on charges for physical goods.
+                    properties:
+                      address:
+                        properties:
+                          city:
+                            type: string
+                          country:
+                            type: string
+                          line1:
+                            type: string
+                          line2:
+                            type: string
+                          postalCode:
+                            type: string
+                          state:
+                            type: string
+                        type: object
+                      carrier:
+                        type: string
+                      name:
+                        type: string
+                      phone:
+                        type: string
+                      trackingNumber:
+                        type: string
+                    required:
+                    - address
+                    - name
+                    type: object
+                  source:
+                    description: A payment source to be charged. This can be the ID
+                      of a [card](https://docs.stripe.com/api#cards) (i.e., credit
+                      or debit card), a [bank account](https://docs.stripe.com/api#bank_accounts),
+                      a [source](https://docs.stripe.com/api#sources), a [token](https://docs.stripe.com/api#tokens),
+                      or a [connected account](https://docs.stripe.com/connect/account-debits#charging-a-connected-account).
+                      For certain sources---namely, [cards](https://docs.stripe.com/api#cards),
+                      [bank accounts](https://docs.stripe.com/api#bank_accounts),
+                      and attached [sources](https://docs.stripe.com/api#sources)---you
+                      must also pass the ID of the associated customer.
+                    type: string
+                    x-kubernetes-validations:
+                    - message: source is immutable
+                      rule: self == oldSelf
+                  statementDescriptor:
+                    description: |-
+                      For a non-card charge, text that appears on the customer's statement as the statement descriptor. This value overrides the account's default statement descriptor. For information about requirements, including the 22-character limit, see [the Statement Descriptor docs](https://docs.stripe.com/get-started/account/statement-descriptors).
+
+                      For a card charge, this value is ignored unless you don't specify a `statement_descriptor_suffix`, in which case this value is used as the suffix.
+                    type: string
+                    x-kubernetes-validations:
+                    - message: statementDescriptor is immutable
+                      rule: self == oldSelf
+                  statementDescriptorSuffix:
+                    description: Provides information about a card charge. Concatenated
+                      to the account's [statement descriptor prefix](https://docs.stripe.com/get-started/account/statement-descriptors#static)
+                      to form the complete statement descriptor that appears on the
+                      customer's statement. If the account has no prefix value, the
+                      suffix is concatenated to the account's statement descriptor.
+                    type: string
+                    x-kubernetes-validations:
+                    - message: statementDescriptorSuffix is immutable
+                      rule: self == oldSelf
+                  transferData:
+                    description: An optional dictionary including the account to automatically
+                      transfer to as part of a destination charge. [See the Connect
+                      documentation](https://docs.stripe.com/connect/destination-charges)
+                      for details.
+                    properties:
+                      amount:
+                        format: int64
+                        type: integer
+                      description:
+                        type: string
+                      destination:
+                        type: string
+                    required:
+                    - destination
+                    type: object
+                    x-kubernetes-validations:
+                    - message: transferData is immutable
+                      rule: self == oldSelf
+                  transferGroup:
+                    description: A string that identifies this transaction as part
+                      of a group. For details, see [Grouping transactions](https://docs.stripe.com/connect/separate-charges-and-transfers#transfer-options).
+                    type: string
+                type: object
+              managementPolicies:
+                default:
+                - '*'
+                description: |-
+                  THIS IS A BETA FIELD. It is on by default but can be opted out
+                  through a Crossplane feature flag.
+                  ManagementPolicies specify the array of actions Crossplane is allowed to
+                  take on the managed and external resources.
+                  See the design doc for more information: https://github.com/crossplane/crossplane/blob/499895a25d1a1a0ba1604944ef98ac7a1a71f197/design/design-doc-observe-only-resources.md?plain=1#L223
+                  and this one: https://github.com/crossplane/crossplane/blob/444267e84783136daa93568b364a5f01228cacbe/design/one-pager-ignore-changes.md
+                items:
+                  description: |-
+                    A ManagementAction represents an action that the Crossplane controllers
+                    can take on an external resource.
+                  enum:
+                  - Observe
+                  - Create
+                  - Update
+                  - Delete
+                  - LateInitialize
+                  - '*'
+                  type: string
+                type: array
+              providerConfigRef:
+                default:
+                  kind: ClusterProviderConfig
+                  name: default
+                description: |-
+                  ProviderConfigReference specifies how the provider that will be used to
+                  create, observe, update, and delete this managed resource should be
+                  configured.
+                properties:
+                  kind:
+                    description: Kind of the referenced object.
+                    type: string
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - kind
+                - name
+                type: object
+              writeConnectionSecretToRef:
+                description: |-
+                  WriteConnectionSecretToReference specifies the namespace and name of a
+                  Secret to which any connection details for this managed resource should
+                  be written. Connection details frequently include the endpoint, username,
+                  and password required to connect to the managed resource.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                required:
+                - name
+                type: object
+            required:
+            - forProvider
+            type: object
+          status:
+            properties:
+              atProvider:
+                properties:
+                  amount:
+                    description: Amount intended to be collected by this payment.
+                      A positive integer representing how much to charge in the [smallest
+                      currency unit](https://docs.stripe.com/currencies#zero-decimal)
+                      (e.g., 100 cents to charge $1.00 or 100 to charge ¥100, a zero-decimal
+                      currency). The minimum amount is $0.50 US or [equivalent in
+                      charge currency](https://docs.stripe.com/currencies#minimum-and-maximum-charge-amounts).
+                      The amount value supports up to eight digits (e.g., a value
+                      of 99999999 for a USD charge of $999,999.99).
+                    format: int64
+                    type: integer
+                  amountCaptured:
+                    description: Amount in cents (or local equivalent) captured (can
+                      be less than the amount attribute on the charge if a partial
+                      capture was made).
+                    format: int64
+                    type: integer
+                  amountRefunded:
+                    description: Amount in cents (or local equivalent) refunded (can
+                      be less than the amount attribute on the charge if a partial
+                      refund was issued).
+                    format: int64
+                    type: integer
+                  application:
+                    description: ID of the Connect application that created the charge.
+                    type: string
+                  applicationFee:
+                    description: The application fee (if any) for the charge. [See
+                      the Connect documentation](https://docs.stripe.com/connect/direct-charges#collect-fees)
+                      for details.
+                    type: string
+                  applicationFeeAmount:
+                    description: The amount of the application fee (if any) requested
+                      for the charge. [See the Connect documentation](https://docs.stripe.com/connect/direct-charges#collect-fees)
+                      for details.
+                    format: int64
+                    type: integer
+                  balanceTransaction:
+                    description: ID of the balance transaction that describes the
+                      impact of this charge on your account balance (not including
+                      refunds or disputes).
+                    type: string
+                  billingDetails:
+                    x-kubernetes-preserve-unknown-fields: true
+                  calculatedStatementDescriptor:
+                    description: The full statement descriptor that is passed to card
+                      networks, and that is displayed on your customers' credit card
+                      and bank statements. Allows you to see what the statement descriptor
+                      looks like after the static and dynamic portions are combined.
+                      This value only exists for card payments.
+                    type: string
+                  captured:
+                    description: If the charge was created without capturing, this
+                      Boolean represents whether it is still uncaptured or has since
+                      been captured.
+                    type: boolean
+                  created:
+                    description: Time at which the object was created. Measured in
+                      seconds since the Unix epoch.
+                    format: int64
+                    type: integer
+                  currency:
+                    description: Three-letter [ISO currency code](https://www.iso.org/iso-4217-currency-codes.html),
+                      in lowercase. Must be a [supported currency](https://stripe.com/docs/currencies).
+                    type: string
+                  customer:
+                    description: ID of the customer this charge is for if one exists.
+                    type: string
+                  description:
+                    description: An arbitrary string attached to the object. Often
+                      useful for displaying to users.
+                    type: string
+                  disputed:
+                    description: Whether the charge has been disputed.
+                    type: boolean
+                  failureBalanceTransaction:
+                    description: ID of the balance transaction that describes the
+                      reversal of the balance on your account due to payment failure.
+                    type: string
+                  failureCode:
+                    description: Error code explaining reason for charge failure if
+                      available (see [the errors section](https://docs.stripe.com/error-codes)
+                      for a list of codes).
+                    type: string
+                  failureMessage:
+                    description: Message to user further explaining reason for charge
+                      failure if available.
+                    type: string
+                  fraudDetails:
+                    description: Information on fraud assessments for the charge.
+                    x-kubernetes-preserve-unknown-fields: true
+                  id:
+                    description: Unique identifier for the object.
+                    type: string
+                  livemode:
+                    description: If the object exists in live mode, the value is `true`.
+                      If the object exists in test mode, the value is `false`.
+                    type: boolean
+                  metadata:
+                    additionalProperties:
+                      type: string
+                    description: Set of [key-value pairs](https://docs.stripe.com/api/metadata)
+                      that you can attach to an object. This can be useful for storing
+                      additional information about the object in a structured format.
+                    type: object
+                  object:
+                    description: String representing the object's type. Objects of
+                      the same type share the same value.
+                    type: string
+                  onBehalfOf:
+                    description: The account (if any) the charge was made on behalf
+                      of without triggering an automatic transfer. See the [Connect
+                      documentation](https://docs.stripe.com/connect/separate-charges-and-transfers)
+                      for details.
+                    type: string
+                  outcome:
+                    description: Details about whether the payment was accepted, and
+                      why. See [understanding declines](https://docs.stripe.com/declines)
+                      for details.
+                    x-kubernetes-preserve-unknown-fields: true
+                  paid:
+                    description: '`true` if the charge succeeded, or was successfully
+                      authorized for later capture.'
+                    type: boolean
+                  paymentIntent:
+                    description: ID of the PaymentIntent associated with this charge,
+                      if one exists.
+                    type: string
+                  paymentMethod:
+                    description: ID of the payment method used in this charge.
+                    type: string
+                  paymentMethodDetails:
+                    description: Details about the payment method at the time of the
+                      transaction.
+                    x-kubernetes-preserve-unknown-fields: true
+                  presentmentDetails:
+                    x-kubernetes-preserve-unknown-fields: true
+                  radarOptions:
+                    x-kubernetes-preserve-unknown-fields: true
+                  receiptEmail:
+                    description: This is the email address that the receipt for this
+                      charge was sent to.
+                    type: string
+                  receiptNumber:
+                    description: This is the transaction number that appears on email
+                      receipts sent for this charge. This attribute will be `null`
+                      until a receipt has been sent.
+                    type: string
+                  receiptUrl:
+                    description: This is the URL to view the receipt for this charge.
+                      The receipt is kept up-to-date to the latest state of the charge,
+                      including any refunds. If the charge is for an Invoice, the
+                      receipt will be stylized as an Invoice receipt.
+                    type: string
+                  refunded:
+                    description: Whether the charge has been fully refunded. If the
+                      charge is only partially refunded, this attribute will still
+                      be false.
+                    type: boolean
+                  refunds:
+                    description: A list of refunds that have been applied to the charge.
+                    x-kubernetes-preserve-unknown-fields: true
+                  review:
+                    description: ID of the review associated with this charge if one
+                      exists.
+                    type: string
+                  shipping:
+                    description: Shipping information for the charge.
+                    x-kubernetes-preserve-unknown-fields: true
+                  sourceTransfer:
+                    description: The transfer ID which created this charge. Only present
+                      if the charge came from another Stripe account. [See the Connect
+                      documentation](https://docs.stripe.com/connect/destination-charges)
+                      for details.
+                    type: string
+                  statementDescriptor:
+                    description: |-
+                      For a non-card charge, text that appears on the customer's statement as the statement descriptor. This value overrides the account's default statement descriptor. For information about requirements, including the 22-character limit, see [the Statement Descriptor docs](https://docs.stripe.com/get-started/account/statement-descriptors).
+
+                      For a card charge, this value is ignored unless you don't specify a `statement_descriptor_suffix`, in which case this value is used as the suffix.
+                    type: string
+                  statementDescriptorSuffix:
+                    description: Provides information about a card charge. Concatenated
+                      to the account's [statement descriptor prefix](https://docs.stripe.com/get-started/account/statement-descriptors#static)
+                      to form the complete statement descriptor that appears on the
+                      customer's statement. If the account has no prefix value, the
+                      suffix is concatenated to the account's statement descriptor.
+                    type: string
+                  status:
+                    description: The status of the payment is either `succeeded`,
+                      `pending`, or `failed`.
+                    type: string
+                  transfer:
+                    description: ID of the transfer to the `destination` account (only
+                      applicable if the charge was created using the `destination`
+                      parameter).
+                    type: string
+                  transferData:
+                    description: An optional dictionary including the account to automatically
+                      transfer to as part of a destination charge. [See the Connect
+                      documentation](https://docs.stripe.com/connect/destination-charges)
+                      for details.
+                    x-kubernetes-preserve-unknown-fields: true
+                  transferGroup:
+                    description: A string that identifies this transaction as part
+                      of a group. See the [Connect documentation](https://docs.stripe.com/connect/separate-charges-and-transfers#transfer-options)
+                      for details.
+                    type: string
+                type: object
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        LastTransitionTime is the last time this condition transitioned from one
+                        status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        A Message containing details about this condition's last transition from
+                        one status to another, if any.
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        ObservedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      type: integer
+                    reason:
+                      description: A Reason for this condition's last transition from
+                        one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
+                      type: string
+                    type:
+                      description: |-
+                        Type of this condition. At most one of each condition type may apply to
+                        a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+              lastHandledReconcileAt:
+                description: |-
+                  LastHandledReconcileAt holds the value of the most recent
+                  reconcile-requested-at annotation token that the controller has
+                  processed. Users can compare this to the annotation to determine
+                  whether a reconcile request has been handled.
+                type: string
+              observedGeneration:
+                description: |-
+                  ObservedGeneration is the latest metadata.generation
+                  which resulted in either a ready state, or stalled due to error
+                  it can not recover from without human intervention.
+                format: int64
+                type: integer
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

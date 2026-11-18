@@ -1,0 +1,97 @@
+{
+  "paths": {
+    "/v1/products": {
+      "post": {"requestBody": {"content": {"application/x-www-form-urlencoded": {"schema": {
+        "properties": {
+          "name": {"type": "string"},
+          "metadata": {"additionalProperties": {"type": "string"}, "type": "object"}
+        },
+        "required": ["name"],
+        "type": "object"
+      }}}}}
+    },
+    "/v1/products/{id}": {"get": {}, "delete": {}},
+    "/v1/tax_rates": {
+      "post": {"requestBody": {"content": {"application/x-www-form-urlencoded": {"schema": {
+        "properties": {"display_name": {"type": "string"}},
+        "type": "object"
+      }}}}}
+    },
+    "/v1/tax_rates/{id}": {"get": {}},
+    "/v1/plans": {
+      "post": {"requestBody": {"content": {"application/x-www-form-urlencoded": {"schema": {
+        "properties": {"product": {"type": "string"}},
+        "required": ["product"],
+        "type": "object"
+      }}}}}
+    },
+    "/v1/plans/{id}": {"get": {}, "delete": {}},
+    "/v1/customers": {
+      "post": {"requestBody": {"content": {"application/x-www-form-urlencoded": {"schema": {
+        "properties": {"financial_account": {"type": "string"}},
+        "required": ["financial_account"],
+        "type": "object"
+      }}}}}
+    },
+    "/v1/customers/{id}": {"get": {}},
+    "/v1/subscriptions": {
+      "post": {"requestBody": {"content": {"application/x-www-form-urlencoded": {"schema": {
+        "properties": {"customer": {"type": "string"}},
+        "required": ["customer"],
+        "type": "object"
+      }}}}}
+    },
+    "/v1/subscriptions/{id}": {"get": {}},
+    "/v1/treasury/financial_accounts": {
+      "post": {"requestBody": {"content": {"application/x-www-form-urlencoded": {"schema": {
+        "properties": {"nickname": {"type": "string"}},
+        "type": "object"
+      }}}}}
+    },
+    "/v1/treasury/financial_accounts/{id}": {"get": {}},
+    "/v1/topups": {
+      "post": {"requestBody": {"content": {"application/x-www-form-urlencoded": {"schema": {
+        "properties": {"description": {"type": "string"}},
+        "type": "object"
+      }}}}}
+    },
+    "/v1/topups/{id}": {"get": {}},
+    "/v1/widgets": {
+      "post": {"requestBody": {"content": {"application/x-www-form-urlencoded": {"schema": {
+        "properties": {
+          "allowed_countries": {"items": {"type": "string"}, "type": "array"},
+          "country": {"type": "string"},
+          "currency": {"format": "currency", "type": "string"},
+          "email": {"type": "string"},
+          "enabled": {"type": "boolean"},
+          "expires_at": {"format": "unix-time", "type": "integer"},
+          "return_url": {"type": "string"},
+          "url": {"type": "string"},
+          "kind": {"enum": ["large", "small"], "type": "string"},
+          "labels": {"additionalProperties": {"type": "string"}, "type": "object"},
+          "lines": {"items": {"properties": {"quantity": {"type": "integer"}, "note": {"type": "string"}}, "required": ["quantity"], "type": "object"}, "type": "array"},
+          "marker": {"properties": {}, "type": "object"},
+          "nickname": {"type": "string"},
+          "product": {"type": "string"},
+          "ratio": {"type": "number"},
+          "settings": {"properties": {"mode": {"enum": ["fast", "slow"], "type": "string"}, "depth": {"type": "integer"}}, "required": ["mode"], "type": "object"},
+          "size": {"example": 7, "type": "integer"},
+          "supported_currencies": {"items": {"type": "string"}, "type": "array"},
+          "tags": {"items": {"enum": ["red", "blue"], "type": "string"}, "type": "array"},
+          "tax_rates": {"items": {"type": "string"}, "type": "array"},
+          "title": {"example": "hello", "type": "string"},
+          "when": {"anyOf": [{"enum": ["now"], "type": "string"}, {"type": "integer"}]}
+        },
+        "required": ["allowed_countries", "supported_currencies", "country", "currency", "email", "enabled", "expires_at", "return_url", "url", "kind", "labels", "lines", "marker", "product", "ratio", "settings", "size", "tags", "tax_rates", "title", "when"],
+        "type": "object"
+      }}}}}
+    },
+    "/v1/widgets/{id}": {
+      "get": {},
+      "post": {"requestBody": {"content": {"application/x-www-form-urlencoded": {"schema": {
+        "properties": {"metadata": {"additionalProperties": {"type": "string"}, "type": "object"}},
+        "type": "object"
+      }}}}}
+    }
+  }
+}

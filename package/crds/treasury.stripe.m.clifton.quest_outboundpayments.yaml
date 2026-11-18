@@ -1,0 +1,615 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.20.1
+  name: outboundpayments.treasury.stripe.m.clifton.quest
+spec:
+  group: treasury.stripe.m.clifton.quest
+  names:
+    categories:
+    - crossplane
+    - managed
+    - stripe
+    kind: OutboundPayment
+    listKind: OutboundPaymentList
+    plural: outboundpayments
+    singular: outboundpayment
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
+      type: string
+    - jsonPath: .metadata.annotations.crossplane\.io/external-name
+      name: EXTERNAL-NAME
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          Use [OutboundPayments](https://docs.stripe.com/docs/treasury/moving-money/financial-accounts/out-of/outbound-payments) to send funds to another party's external bank account or [FinancialAccount](https://docs.stripe.com/api#financial_accounts). To send money to an account belonging to the same user, use an [OutboundTransfer](https://docs.stripe.com/api#outbound_transfers).
+
+          Simulate OutboundPayment state changes with the `/v1/test_helpers/treasury/outbound_payments` endpoints. These methods can only be called on test mode objects.
+
+          Related guide: [Moving money with Treasury using OutboundPayment objects](https://docs.stripe.com/docs/treasury/moving-money/financial-accounts/out-of/outbound-payments)
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              forProvider:
+                properties:
+                  amount:
+                    description: Amount (in cents) to be transferred.
+                    format: int64
+                    type: integer
+                    x-kubernetes-validations:
+                    - message: amount is immutable
+                      rule: self == oldSelf
+                  currency:
+                    description: Three-letter [ISO currency code](https://www.iso.org/iso-4217-currency-codes.html),
+                      in lowercase. Must be a [supported currency](https://stripe.com/docs/currencies).
+                    type: string
+                    x-kubernetes-validations:
+                    - message: currency is immutable
+                      rule: self == oldSelf
+                  customer:
+                    description: ID of the customer to whom the OutboundPayment is
+                      sent. Must match the Customer attached to the `destination_payment_method`
+                      passed in.
+                    type: string
+                    x-kubernetes-validations:
+                    - message: customer is immutable
+                      rule: self == oldSelf
+                  customerRef:
+                    description: A NamespacedReference to a named object.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                      namespace:
+                        description: Namespace of the referenced object
+                        type: string
+                      policy:
+                        description: Policies for referencing.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: |-
+                              Resolution specifies whether resolution of this reference is required.
+                              The default is 'Required', which means the reconcile will fail if the
+                              reference cannot be resolved. 'Optional' means this reference will be
+                              a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: |-
+                              Resolve specifies when this reference should be resolved. The default
+                              is 'IfNotPresent', which will attempt to resolve the reference only when
+                              the corresponding field is not present. Use 'Always' to resolve the
+                              reference on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
+                    required:
+                    - name
+                    type: object
+                  customerSelector:
+                    description: NamespacedSelector selects a namespaced object.
+                    properties:
+                      matchControllerRef:
+                        description: |-
+                          MatchControllerRef ensures an object with the same controller reference
+                          as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
+                        type: object
+                      namespace:
+                        description: Namespace for the selector
+                        type: string
+                      policy:
+                        description: Policies for selection.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: |-
+                              Resolution specifies whether resolution of this reference is required.
+                              The default is 'Required', which means the reconcile will fail if the
+                              reference cannot be resolved. 'Optional' means this reference will be
+                              a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: |-
+                              Resolve specifies when this reference should be resolved. The default
+                              is 'IfNotPresent', which will attempt to resolve the reference only when
+                              the corresponding field is not present. Use 'Always' to resolve the
+                              reference on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
+                    type: object
+                  description:
+                    description: An arbitrary string attached to the object. Often
+                      useful for displaying to users.
+                    type: string
+                    x-kubernetes-validations:
+                    - message: description is immutable
+                      rule: self == oldSelf
+                  destinationPaymentMethod:
+                    description: The PaymentMethod to use as the payment instrument
+                      for the OutboundPayment. Exclusive with `destination_payment_method_data`.
+                    type: string
+                    x-kubernetes-validations:
+                    - message: destinationPaymentMethod is immutable
+                      rule: self == oldSelf
+                  destinationPaymentMethodData:
+                    description: Hash used to generate the PaymentMethod to be used
+                      for this OutboundPayment. Exclusive with `destination_payment_method`.
+                    properties:
+                      billingDetails:
+                        properties:
+                          address:
+                            properties:
+                              city:
+                                type: string
+                              country:
+                                type: string
+                              line1:
+                                type: string
+                              line2:
+                                type: string
+                              postalCode:
+                                type: string
+                              state:
+                                type: string
+                            type: object
+                          email:
+                            type: string
+                          name:
+                            type: string
+                          phone:
+                            type: string
+                        type: object
+                      financialAccount:
+                        type: string
+                      metadata:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      type:
+                        enum:
+                        - financial_account
+                        - us_bank_account
+                        type: string
+                      usBankAccount:
+                        properties:
+                          accountHolderType:
+                            enum:
+                            - company
+                            - individual
+                            type: string
+                          accountNumber:
+                            type: string
+                          accountType:
+                            enum:
+                            - checking
+                            - savings
+                            type: string
+                          financialConnectionsAccount:
+                            type: string
+                          routingNumber:
+                            type: string
+                        type: object
+                    required:
+                    - type
+                    type: object
+                    x-kubernetes-validations:
+                    - message: destinationPaymentMethodData is immutable
+                      rule: self == oldSelf
+                  destinationPaymentMethodOptions:
+                    description: Payment method-specific configuration for this OutboundPayment.
+                    properties:
+                      usBankAccount:
+                        properties:
+                          network:
+                            enum:
+                            - ach
+                            - us_domestic_wire
+                            type: string
+                        type: object
+                    type: object
+                    x-kubernetes-validations:
+                    - message: destinationPaymentMethodOptions is immutable
+                      rule: self == oldSelf
+                  endUserDetails:
+                    description: End user details.
+                    properties:
+                      ipAddress:
+                        type: string
+                      present:
+                        type: boolean
+                    required:
+                    - present
+                    type: object
+                    x-kubernetes-validations:
+                    - message: endUserDetails is immutable
+                      rule: self == oldSelf
+                  financialAccount:
+                    description: The FinancialAccount to pull funds from.
+                    type: string
+                    x-kubernetes-validations:
+                    - message: financialAccount is immutable
+                      rule: self == oldSelf
+                  financialAccountRef:
+                    description: A NamespacedReference to a named object.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                      namespace:
+                        description: Namespace of the referenced object
+                        type: string
+                      policy:
+                        description: Policies for referencing.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: |-
+                              Resolution specifies whether resolution of this reference is required.
+                              The default is 'Required', which means the reconcile will fail if the
+                              reference cannot be resolved. 'Optional' means this reference will be
+                              a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: |-
+                              Resolve specifies when this reference should be resolved. The default
+                              is 'IfNotPresent', which will attempt to resolve the reference only when
+                              the corresponding field is not present. Use 'Always' to resolve the
+                              reference on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
+                    required:
+                    - name
+                    type: object
+                  financialAccountSelector:
+                    description: NamespacedSelector selects a namespaced object.
+                    properties:
+                      matchControllerRef:
+                        description: |-
+                          MatchControllerRef ensures an object with the same controller reference
+                          as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
+                        type: object
+                      namespace:
+                        description: Namespace for the selector
+                        type: string
+                      policy:
+                        description: Policies for selection.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: |-
+                              Resolution specifies whether resolution of this reference is required.
+                              The default is 'Required', which means the reconcile will fail if the
+                              reference cannot be resolved. 'Optional' means this reference will be
+                              a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: |-
+                              Resolve specifies when this reference should be resolved. The default
+                              is 'IfNotPresent', which will attempt to resolve the reference only when
+                              the corresponding field is not present. Use 'Always' to resolve the
+                              reference on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
+                    type: object
+                  metadata:
+                    additionalProperties:
+                      type: string
+                    description: Set of [key-value pairs](https://docs.stripe.com/api/metadata)
+                      that you can attach to an object. This can be useful for storing
+                      additional information about the object in a structured format.
+                      Individual keys can be unset by posting an empty value to them.
+                      All keys can be unset by posting an empty value to `metadata`.
+                    type: object
+                    x-kubernetes-validations:
+                    - message: metadata is immutable
+                      rule: self == oldSelf
+                  statementDescriptor:
+                    description: The description that appears on the receiving end
+                      for this OutboundPayment (for example, bank statement for external
+                      bank transfer). Maximum 10 characters for `ach` payments, 140
+                      characters for `us_domestic_wire` payments, or 500 characters
+                      for `stripe` network transfers. Can only include -#.$&*, spaces,
+                      and alphanumeric characters. The default value is "payment".
+                    type: string
+                    x-kubernetes-validations:
+                    - message: statementDescriptor is immutable
+                      rule: self == oldSelf
+                required:
+                - amount
+                - currency
+                type: object
+                x-kubernetes-validations:
+                - message: financialAccount, financialAccountRef or financialAccountSelector
+                    is required
+                  rule: has(self.financialAccount) || has(self.financialAccountRef)
+                    || has(self.financialAccountSelector)
+              managementPolicies:
+                default:
+                - '*'
+                description: |-
+                  THIS IS A BETA FIELD. It is on by default but can be opted out
+                  through a Crossplane feature flag.
+                  ManagementPolicies specify the array of actions Crossplane is allowed to
+                  take on the managed and external resources.
+                  See the design doc for more information: https://github.com/crossplane/crossplane/blob/499895a25d1a1a0ba1604944ef98ac7a1a71f197/design/design-doc-observe-only-resources.md?plain=1#L223
+                  and this one: https://github.com/crossplane/crossplane/blob/444267e84783136daa93568b364a5f01228cacbe/design/one-pager-ignore-changes.md
+                items:
+                  description: |-
+                    A ManagementAction represents an action that the Crossplane controllers
+                    can take on an external resource.
+                  enum:
+                  - Observe
+                  - Create
+                  - Update
+                  - Delete
+                  - LateInitialize
+                  - '*'
+                  type: string
+                type: array
+              providerConfigRef:
+                default:
+                  kind: ClusterProviderConfig
+                  name: default
+                description: |-
+                  ProviderConfigReference specifies how the provider that will be used to
+                  create, observe, update, and delete this managed resource should be
+                  configured.
+                properties:
+                  kind:
+                    description: Kind of the referenced object.
+                    type: string
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - kind
+                - name
+                type: object
+              writeConnectionSecretToRef:
+                description: |-
+                  WriteConnectionSecretToReference specifies the namespace and name of a
+                  Secret to which any connection details for this managed resource should
+                  be written. Connection details frequently include the endpoint, username,
+                  and password required to connect to the managed resource.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                required:
+                - name
+                type: object
+            required:
+            - forProvider
+            type: object
+          status:
+            properties:
+              atProvider:
+                properties:
+                  amount:
+                    description: Amount (in cents) transferred.
+                    format: int64
+                    type: integer
+                  cancelable:
+                    description: Returns `true` if the object can be canceled, and
+                      `false` otherwise.
+                    type: boolean
+                  created:
+                    description: Time at which the object was created. Measured in
+                      seconds since the Unix epoch.
+                    format: int64
+                    type: integer
+                  currency:
+                    description: Three-letter [ISO currency code](https://www.iso.org/iso-4217-currency-codes.html),
+                      in lowercase. Must be a [supported currency](https://stripe.com/docs/currencies).
+                    type: string
+                  customer:
+                    description: ID of the [customer](https://docs.stripe.com/api/customers)
+                      to whom an OutboundPayment is sent.
+                    type: string
+                  description:
+                    description: An arbitrary string attached to the object. Often
+                      useful for displaying to users.
+                    type: string
+                  destinationPaymentMethod:
+                    description: The PaymentMethod via which an OutboundPayment is
+                      sent. This field can be empty if the OutboundPayment was created
+                      using `destination_payment_method_data`.
+                    type: string
+                  destinationPaymentMethodDetails:
+                    description: Details about the PaymentMethod for an OutboundPayment.
+                    x-kubernetes-preserve-unknown-fields: true
+                  endUserDetails:
+                    description: Details about the end user.
+                    x-kubernetes-preserve-unknown-fields: true
+                  expectedArrivalDate:
+                    description: The date when funds are expected to arrive in the
+                      destination account.
+                    format: int64
+                    type: integer
+                  financialAccount:
+                    description: The FinancialAccount that funds were pulled from.
+                    type: string
+                  hostedRegulatoryReceiptUrl:
+                    description: A [hosted transaction receipt](https://docs.stripe.com/treasury/moving-money/regulatory-receipts)
+                      URL that is provided when money movement is considered regulated
+                      under Stripe's money transmission licenses.
+                    type: string
+                  id:
+                    description: Unique identifier for the object.
+                    type: string
+                  livemode:
+                    description: If the object exists in live mode, the value is `true`.
+                      If the object exists in test mode, the value is `false`.
+                    type: boolean
+                  metadata:
+                    additionalProperties:
+                      type: string
+                    description: Set of [key-value pairs](https://docs.stripe.com/api/metadata)
+                      that you can attach to an object. This can be useful for storing
+                      additional information about the object in a structured format.
+                    type: object
+                  object:
+                    description: String representing the object's type. Objects of
+                      the same type share the same value.
+                    type: string
+                  returnedDetails:
+                    description: Details about a returned OutboundPayment. Only set
+                      when the status is `returned`.
+                    x-kubernetes-preserve-unknown-fields: true
+                  statementDescriptor:
+                    description: The description that appears on the receiving end
+                      for an OutboundPayment (for example, bank statement for external
+                      bank transfer).
+                    type: string
+                  status:
+                    description: 'Current status of the OutboundPayment: `processing`,
+                      `failed`, `posted`, `returned`, `canceled`. An OutboundPayment
+                      is `processing` if it has been created and is pending. The status
+                      changes to `posted` once the OutboundPayment has been "confirmed"
+                      and funds have left the account, or to `failed` or `canceled`.
+                      If an OutboundPayment fails to arrive at its destination, its
+                      status will change to `returned`.'
+                    type: string
+                  statusTransitions:
+                    x-kubernetes-preserve-unknown-fields: true
+                  trackingDetails:
+                    description: Details about network-specific tracking information
+                      if available.
+                    x-kubernetes-preserve-unknown-fields: true
+                  transaction:
+                    description: The Transaction associated with this object.
+                    type: string
+                type: object
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        LastTransitionTime is the last time this condition transitioned from one
+                        status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        A Message containing details about this condition's last transition from
+                        one status to another, if any.
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        ObservedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      type: integer
+                    reason:
+                      description: A Reason for this condition's last transition from
+                        one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
+                      type: string
+                    type:
+                      description: |-
+                        Type of this condition. At most one of each condition type may apply to
+                        a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+              lastHandledReconcileAt:
+                description: |-
+                  LastHandledReconcileAt holds the value of the most recent
+                  reconcile-requested-at annotation token that the controller has
+                  processed. Users can compare this to the annotation to determine
+                  whether a reconcile request has been handled.
+                type: string
+              observedGeneration:
+                description: |-
+                  ObservedGeneration is the latest metadata.generation
+                  which resulted in either a ready state, or stalled due to error
+                  it can not recover from without human intervention.
+                format: int64
+                type: integer
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

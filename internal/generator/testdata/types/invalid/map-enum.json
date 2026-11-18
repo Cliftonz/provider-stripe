@@ -1,0 +1,14 @@
+{
+  "paths": {
+    "/v1/widgets": {
+      "post": {"requestBody": {"content": {"application/x-www-form-urlencoded": {"schema": {
+        "properties": {"modes": {"additionalProperties": {"enum": ["a", "b"], "type": "string"}, "type": "object"}},
+        "type": "object"
+      }}}}}
+    },
+    "/v1/widgets/{id}": {
+      "get": {"responses": {"200": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/widget"}}}}}}
+    }
+  },
+  "components": {"schemas": {"widget": {"properties": {"id": {"type": "string"}}, "type": "object"}}}
+}

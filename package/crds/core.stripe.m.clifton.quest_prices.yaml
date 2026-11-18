@@ -1,0 +1,659 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.20.1
+  name: prices.core.stripe.m.clifton.quest
+spec:
+  group: core.stripe.m.clifton.quest
+  names:
+    categories:
+    - crossplane
+    - managed
+    - stripe
+    kind: Price
+    listKind: PriceList
+    plural: prices
+    singular: price
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
+      type: string
+    - jsonPath: .metadata.annotations.crossplane\.io/external-name
+      name: EXTERNAL-NAME
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          Prices define the unit cost, currency, and (optional) billing cycle for both recurring and one-time purchases of products.
+          [Products](https://docs.stripe.com/api#products) help you track inventory or provisioning, and prices help you track payment terms. Different physical goods or levels of service should be represented by products, and pricing options should be represented by prices. This approach lets you change prices without having to change your provisioning scheme.
+
+          For example, you might have a single "gold" product that has prices for $10/month, $100/year, and €9 once.
+
+          Related guides: [Set up a subscription](https://docs.stripe.com/billing/subscriptions/set-up-subscription), [create an invoice](https://docs.stripe.com/billing/invoices/create), and more about [products and prices](https://docs.stripe.com/products-prices/overview).
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              forProvider:
+                properties:
+                  active:
+                    description: Whether the price can be used for new purchases.
+                      Defaults to `true`.
+                    type: boolean
+                  billingScheme:
+                    description: Describes how to compute the price per period. Either
+                      `per_unit` or `tiered`. `per_unit` indicates that the fixed
+                      amount (specified in `unit_amount` or `unit_amount_decimal`)
+                      will be charged per unit in `quantity` (for prices with `usage_type=licensed`),
+                      or per unit of total usage (for prices with `usage_type=metered`).
+                      `tiered` indicates that the unit pricing will be computed using
+                      a tiering strategy as defined using the `tiers` and `tiers_mode`
+                      attributes.
+                    enum:
+                    - per_unit
+                    - tiered
+                    type: string
+                    x-kubernetes-validations:
+                    - message: billingScheme is immutable
+                      rule: self == oldSelf
+                  currency:
+                    description: Three-letter [ISO currency code](https://www.iso.org/iso-4217-currency-codes.html),
+                      in lowercase. Must be a [supported currency](https://stripe.com/docs/currencies).
+                    type: string
+                    x-kubernetes-validations:
+                    - message: currency is immutable
+                      rule: self == oldSelf
+                  currencyOptions:
+                    additionalProperties:
+                      properties:
+                        customUnitAmount:
+                          properties:
+                            enabled:
+                              type: boolean
+                            maximum:
+                              format: int64
+                              type: integer
+                            minimum:
+                              format: int64
+                              type: integer
+                            preset:
+                              format: int64
+                              type: integer
+                          required:
+                          - enabled
+                          type: object
+                        taxBehavior:
+                          enum:
+                          - exclusive
+                          - inclusive
+                          - unspecified
+                          type: string
+                        tiers:
+                          items:
+                            properties:
+                              flatAmount:
+                                format: int64
+                                type: integer
+                              flatAmountDecimal:
+                                type: string
+                              unitAmount:
+                                format: int64
+                                type: integer
+                              unitAmountDecimal:
+                                type: string
+                              upTo:
+                                x-kubernetes-preserve-unknown-fields: true
+                            required:
+                            - upTo
+                            type: object
+                          type: array
+                        unitAmount:
+                          format: int64
+                          type: integer
+                        unitAmountDecimal:
+                          type: string
+                      type: object
+                    description: Prices defined in each available currency option.
+                      Each key must be a three-letter [ISO currency code](https://www.iso.org/iso-4217-currency-codes.html)
+                      and a [supported currency](https://stripe.com/docs/currencies).
+                    type: object
+                  customUnitAmount:
+                    description: When set, provides configuration for the amount to
+                      be adjusted by the customer during Checkout Sessions and Payment
+                      Links.
+                    properties:
+                      enabled:
+                        type: boolean
+                      maximum:
+                        format: int64
+                        type: integer
+                      minimum:
+                        format: int64
+                        type: integer
+                      preset:
+                        format: int64
+                        type: integer
+                    required:
+                    - enabled
+                    type: object
+                    x-kubernetes-validations:
+                    - message: customUnitAmount is immutable
+                      rule: self == oldSelf
+                  lookupKey:
+                    description: A lookup key used to retrieve prices dynamically
+                      from a static string. This may be up to 200 characters.
+                    type: string
+                  metadata:
+                    additionalProperties:
+                      type: string
+                    description: Set of [key-value pairs](https://docs.stripe.com/api/metadata)
+                      that you can attach to an object. This can be useful for storing
+                      additional information about the object in a structured format.
+                      Individual keys can be unset by posting an empty value to them.
+                      All keys can be unset by posting an empty value to `metadata`.
+                    type: object
+                  nickname:
+                    description: A brief description of the price, hidden from customers.
+                    type: string
+                  product:
+                    description: The ID of the [Product](https://docs.stripe.com/api/products)
+                      that this [Price](https://docs.stripe.com/api/prices) will belong
+                      to.
+                    type: string
+                    x-kubernetes-validations:
+                    - message: product is immutable
+                      rule: self == oldSelf
+                  productData:
+                    description: These fields can be used to create a new product
+                      that this price will belong to.
+                    properties:
+                      active:
+                        type: boolean
+                      id:
+                        type: string
+                      metadata:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      name:
+                        type: string
+                      statementDescriptor:
+                        type: string
+                      taxCode:
+                        type: string
+                      taxDetails:
+                        properties:
+                          performanceLocation:
+                            type: string
+                          taxCode:
+                            type: string
+                        type: object
+                      unitLabel:
+                        type: string
+                    required:
+                    - name
+                    type: object
+                    x-kubernetes-validations:
+                    - message: productData is immutable
+                      rule: self == oldSelf
+                  productRef:
+                    description: A NamespacedReference to a named object.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                      namespace:
+                        description: Namespace of the referenced object
+                        type: string
+                      policy:
+                        description: Policies for referencing.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: |-
+                              Resolution specifies whether resolution of this reference is required.
+                              The default is 'Required', which means the reconcile will fail if the
+                              reference cannot be resolved. 'Optional' means this reference will be
+                              a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: |-
+                              Resolve specifies when this reference should be resolved. The default
+                              is 'IfNotPresent', which will attempt to resolve the reference only when
+                              the corresponding field is not present. Use 'Always' to resolve the
+                              reference on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
+                    required:
+                    - name
+                    type: object
+                  productSelector:
+                    description: NamespacedSelector selects a namespaced object.
+                    properties:
+                      matchControllerRef:
+                        description: |-
+                          MatchControllerRef ensures an object with the same controller reference
+                          as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
+                        type: object
+                      namespace:
+                        description: Namespace for the selector
+                        type: string
+                      policy:
+                        description: Policies for selection.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: |-
+                              Resolution specifies whether resolution of this reference is required.
+                              The default is 'Required', which means the reconcile will fail if the
+                              reference cannot be resolved. 'Optional' means this reference will be
+                              a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: |-
+                              Resolve specifies when this reference should be resolved. The default
+                              is 'IfNotPresent', which will attempt to resolve the reference only when
+                              the corresponding field is not present. Use 'Always' to resolve the
+                              reference on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
+                    type: object
+                  recurring:
+                    description: The recurring components of a price such as `interval`
+                      and `usage_type`.
+                    properties:
+                      interval:
+                        enum:
+                        - day
+                        - month
+                        - week
+                        - year
+                        type: string
+                      intervalCount:
+                        format: int64
+                        type: integer
+                      meter:
+                        type: string
+                      usageType:
+                        enum:
+                        - licensed
+                        - metered
+                        type: string
+                    required:
+                    - interval
+                    type: object
+                    x-kubernetes-validations:
+                    - message: recurring is immutable
+                      rule: self == oldSelf
+                  taxBehavior:
+                    description: Only required if a [default tax behavior](https://docs.stripe.com/tax/products-prices-tax-categories-tax-behavior#setting-a-default-tax-behavior-(recommended))
+                      was not provided in the Stripe Tax settings. Specifies whether
+                      the price is considered inclusive of taxes or exclusive of taxes.
+                      One of `inclusive`, `exclusive`, or `unspecified`. Once specified
+                      as either `inclusive` or `exclusive`, it cannot be changed.
+                    enum:
+                    - exclusive
+                    - inclusive
+                    - unspecified
+                    type: string
+                  tiers:
+                    description: Each element represents a pricing tier. This parameter
+                      requires `billing_scheme` to be set to `tiered`. See also the
+                      documentation for `billing_scheme`.
+                    items:
+                      properties:
+                        flatAmount:
+                          format: int64
+                          type: integer
+                        flatAmountDecimal:
+                          type: string
+                        unitAmount:
+                          format: int64
+                          type: integer
+                        unitAmountDecimal:
+                          type: string
+                        upTo:
+                          x-kubernetes-preserve-unknown-fields: true
+                      required:
+                      - upTo
+                      type: object
+                    type: array
+                    x-kubernetes-validations:
+                    - message: tiers is immutable
+                      rule: self == oldSelf
+                  tiersMode:
+                    description: Defines if the tiering price should be `graduated`
+                      or `volume` based. In `volume`-based tiering, the maximum quantity
+                      within a period determines the per unit price, in `graduated`
+                      tiering pricing can successively change as the quantity grows.
+                    enum:
+                    - graduated
+                    - volume
+                    type: string
+                    x-kubernetes-validations:
+                    - message: tiersMode is immutable
+                      rule: self == oldSelf
+                  transferLookupKey:
+                    description: If set to true, will atomically remove the lookup
+                      key from the existing price, and assign it to this price.
+                    type: boolean
+                  transformQuantity:
+                    description: Apply a transformation to the reported usage or set
+                      quantity before computing the billed price. Cannot be combined
+                      with `tiers`.
+                    properties:
+                      divideBy:
+                        format: int64
+                        type: integer
+                      round:
+                        enum:
+                        - down
+                        - up
+                        type: string
+                    required:
+                    - divideBy
+                    - round
+                    type: object
+                    x-kubernetes-validations:
+                    - message: transformQuantity is immutable
+                      rule: self == oldSelf
+                  unitAmount:
+                    description: A positive integer in cents (or local equivalent)
+                      (or 0 for a free price) representing how much to charge. One
+                      of `unit_amount`, `unit_amount_decimal`, or `custom_unit_amount`
+                      is required, unless `billing_scheme=tiered`.
+                    format: int64
+                    type: integer
+                    x-kubernetes-validations:
+                    - message: unitAmount is immutable
+                      rule: self == oldSelf
+                  unitAmountDecimal:
+                    description: Same as `unit_amount`, but accepts a decimal value
+                      in cents (or local equivalent) with at most 12 decimal places.
+                      Only one of `unit_amount` and `unit_amount_decimal` can be set.
+                    type: string
+                    x-kubernetes-validations:
+                    - message: unitAmountDecimal is immutable
+                      rule: self == oldSelf
+                required:
+                - currency
+                type: object
+              managementPolicies:
+                default:
+                - '*'
+                description: |-
+                  THIS IS A BETA FIELD. It is on by default but can be opted out
+                  through a Crossplane feature flag.
+                  ManagementPolicies specify the array of actions Crossplane is allowed to
+                  take on the managed and external resources.
+                  See the design doc for more information: https://github.com/crossplane/crossplane/blob/499895a25d1a1a0ba1604944ef98ac7a1a71f197/design/design-doc-observe-only-resources.md?plain=1#L223
+                  and this one: https://github.com/crossplane/crossplane/blob/444267e84783136daa93568b364a5f01228cacbe/design/one-pager-ignore-changes.md
+                items:
+                  description: |-
+                    A ManagementAction represents an action that the Crossplane controllers
+                    can take on an external resource.
+                  enum:
+                  - Observe
+                  - Create
+                  - Update
+                  - Delete
+                  - LateInitialize
+                  - '*'
+                  type: string
+                type: array
+              providerConfigRef:
+                default:
+                  kind: ClusterProviderConfig
+                  name: default
+                description: |-
+                  ProviderConfigReference specifies how the provider that will be used to
+                  create, observe, update, and delete this managed resource should be
+                  configured.
+                properties:
+                  kind:
+                    description: Kind of the referenced object.
+                    type: string
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - kind
+                - name
+                type: object
+              writeConnectionSecretToRef:
+                description: |-
+                  WriteConnectionSecretToReference specifies the namespace and name of a
+                  Secret to which any connection details for this managed resource should
+                  be written. Connection details frequently include the endpoint, username,
+                  and password required to connect to the managed resource.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                required:
+                - name
+                type: object
+            required:
+            - forProvider
+            type: object
+          status:
+            properties:
+              atProvider:
+                properties:
+                  active:
+                    description: Whether the price can be used for new purchases.
+                    type: boolean
+                  billingScheme:
+                    description: Describes how to compute the price per period. Either
+                      `per_unit` or `tiered`. `per_unit` indicates that the fixed
+                      amount (specified in `unit_amount` or `unit_amount_decimal`)
+                      will be charged per unit in `quantity` (for prices with `usage_type=licensed`),
+                      or per unit of total usage (for prices with `usage_type=metered`).
+                      `tiered` indicates that the unit pricing will be computed using
+                      a tiering strategy as defined using the `tiers` and `tiers_mode`
+                      attributes.
+                    type: string
+                  created:
+                    description: Time at which the object was created. Measured in
+                      seconds since the Unix epoch.
+                    format: int64
+                    type: integer
+                  currency:
+                    description: Three-letter [ISO currency code](https://www.iso.org/iso-4217-currency-codes.html),
+                      in lowercase. Must be a [supported currency](https://stripe.com/docs/currencies).
+                    type: string
+                  currencyOptions:
+                    description: Prices defined in each available currency option.
+                      Each key must be a three-letter [ISO currency code](https://www.iso.org/iso-4217-currency-codes.html)
+                      and a [supported currency](https://stripe.com/docs/currencies).
+                    x-kubernetes-preserve-unknown-fields: true
+                  customUnitAmount:
+                    description: When set, provides configuration for the amount to
+                      be adjusted by the customer during Checkout Sessions and Payment
+                      Links.
+                    x-kubernetes-preserve-unknown-fields: true
+                  id:
+                    description: Unique identifier for the object.
+                    type: string
+                  livemode:
+                    description: If the object exists in live mode, the value is `true`.
+                      If the object exists in test mode, the value is `false`.
+                    type: boolean
+                  lookupKey:
+                    description: A lookup key used to retrieve prices dynamically
+                      from a static string. This may be up to 200 characters.
+                    type: string
+                  metadata:
+                    additionalProperties:
+                      type: string
+                    description: Set of [key-value pairs](https://docs.stripe.com/api/metadata)
+                      that you can attach to an object. This can be useful for storing
+                      additional information about the object in a structured format.
+                    type: object
+                  nickname:
+                    description: A brief description of the price, hidden from customers.
+                    type: string
+                  object:
+                    description: String representing the object's type. Objects of
+                      the same type share the same value.
+                    type: string
+                  product:
+                    description: The ID of the product this price is associated with.
+                    type: string
+                  recurring:
+                    description: The recurring components of a price such as `interval`
+                      and `usage_type`.
+                    x-kubernetes-preserve-unknown-fields: true
+                  taxBehavior:
+                    description: Only required if a [default tax behavior](https://docs.stripe.com/tax/products-prices-tax-categories-tax-behavior#setting-a-default-tax-behavior-(recommended))
+                      was not provided in the Stripe Tax settings. Specifies whether
+                      the price is considered inclusive of taxes or exclusive of taxes.
+                      One of `inclusive`, `exclusive`, or `unspecified`. Once specified
+                      as either `inclusive` or `exclusive`, it cannot be changed.
+                    type: string
+                  tiers:
+                    description: Each element represents a pricing tier. This parameter
+                      requires `billing_scheme` to be set to `tiered`. See also the
+                      documentation for `billing_scheme`.
+                    x-kubernetes-preserve-unknown-fields: true
+                  tiersMode:
+                    description: Defines if the tiering price should be `graduated`
+                      or `volume` based. In `volume`-based tiering, the maximum quantity
+                      within a period determines the per unit price. In `graduated`
+                      tiering, pricing can change as the quantity grows.
+                    type: string
+                  transformQuantity:
+                    description: Apply a transformation to the reported usage or set
+                      quantity before computing the amount billed. Cannot be combined
+                      with `tiers`.
+                    x-kubernetes-preserve-unknown-fields: true
+                  type:
+                    description: One of `one_time` or `recurring` depending on whether
+                      the price is for a one-time purchase or a recurring (subscription)
+                      purchase.
+                    type: string
+                  unitAmount:
+                    description: The unit amount in cents (or local equivalent) to
+                      be charged, represented as a whole integer if possible. Only
+                      set if `billing_scheme=per_unit`.
+                    format: int64
+                    type: integer
+                  unitAmountDecimal:
+                    description: The unit amount in cents (or local equivalent) to
+                      be charged, represented as a decimal string with at most 12
+                      decimal places. Only set if `billing_scheme=per_unit`.
+                    type: string
+                type: object
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        LastTransitionTime is the last time this condition transitioned from one
+                        status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        A Message containing details about this condition's last transition from
+                        one status to another, if any.
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        ObservedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      type: integer
+                    reason:
+                      description: A Reason for this condition's last transition from
+                        one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
+                      type: string
+                    type:
+                      description: |-
+                        Type of this condition. At most one of each condition type may apply to
+                        a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+              lastHandledReconcileAt:
+                description: |-
+                  LastHandledReconcileAt holds the value of the most recent
+                  reconcile-requested-at annotation token that the controller has
+                  processed. Users can compare this to the annotation to determine
+                  whether a reconcile request has been handled.
+                type: string
+              observedGeneration:
+                description: |-
+                  ObservedGeneration is the latest metadata.generation
+                  which resulted in either a ready state, or stalled due to error
+                  it can not recover from without human intervention.
+                format: int64
+                type: integer
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

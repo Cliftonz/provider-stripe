@@ -1,0 +1,1352 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.20.1
+  name: paymentlinks.core.stripe.m.clifton.quest
+spec:
+  group: core.stripe.m.clifton.quest
+  names:
+    categories:
+    - crossplane
+    - managed
+    - stripe
+    kind: PaymentLink
+    listKind: PaymentLinkList
+    plural: paymentlinks
+    singular: paymentlink
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
+      type: string
+    - jsonPath: .metadata.annotations.crossplane\.io/external-name
+      name: EXTERNAL-NAME
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          A payment link is a shareable URL that will take your customers to a hosted payment page. A payment link can be shared and used multiple times.
+
+          When a customer opens a payment link it will open a new [checkout session](https://docs.stripe.com/api/checkout/sessions) to render the payment page. You can use [checkout session events](https://docs.stripe.com/api/events/types#event_types-checkout.session.completed) to track payments through payment links.
+
+          Related guide: [Payment Links API](https://docs.stripe.com/payment-links)
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              forProvider:
+                properties:
+                  active:
+                    description: Whether the payment link's `url` is active. If `false`,
+                      customers visiting the URL will be shown a page saying that
+                      the link has been deactivated.
+                    type: boolean
+                  afterCompletion:
+                    description: Behavior after the purchase is complete.
+                    properties:
+                      hostedConfirmation:
+                        properties:
+                          customMessage:
+                            type: string
+                        type: object
+                      redirect:
+                        properties:
+                          url:
+                            type: string
+                        required:
+                        - url
+                        type: object
+                      type:
+                        enum:
+                        - hosted_confirmation
+                        - redirect
+                        type: string
+                    required:
+                    - type
+                    type: object
+                  allowPromotionCodes:
+                    description: Enables user redeemable promotion codes.
+                    type: boolean
+                  applicationFeeAmount:
+                    description: The amount of the application fee (if any) that will
+                      be requested to be applied to the payment and transferred to
+                      the application owner's Stripe account. Can only be applied
+                      when there are no line items with recurring prices.
+                    format: int64
+                    type: integer
+                  applicationFeePercent:
+                    description: A non-negative decimal between 0 and 100, with at
+                      most two decimal places. This represents the percentage of the
+                      subscription invoice total that will be transferred to the application
+                      owner's Stripe account. There must be at least 1 line item with
+                      a recurring price to use this field.
+                    type: number
+                  automaticTax:
+                    description: Configuration for automatic tax collection.
+                    properties:
+                      enabled:
+                        type: boolean
+                      liability:
+                        properties:
+                          account:
+                            type: string
+                          type:
+                            enum:
+                            - account
+                            - self
+                            type: string
+                        required:
+                        - type
+                        type: object
+                    required:
+                    - enabled
+                    type: object
+                  billingAddressCollection:
+                    description: Configuration for collecting the customer's billing
+                      address. Defaults to `auto`.
+                    enum:
+                    - auto
+                    - required
+                    type: string
+                  consentCollection:
+                    description: Configure fields to gather active consent from customers.
+                    properties:
+                      paymentMethodReuseAgreement:
+                        properties:
+                          position:
+                            enum:
+                            - auto
+                            - hidden
+                            type: string
+                        required:
+                        - position
+                        type: object
+                      promotions:
+                        enum:
+                        - auto
+                        - none
+                        type: string
+                      termsOfService:
+                        enum:
+                        - none
+                        - required
+                        type: string
+                    type: object
+                  currency:
+                    description: Three-letter [ISO currency code](https://www.iso.org/iso-4217-currency-codes.html),
+                      in lowercase. Must be a [supported currency](https://stripe.com/docs/currencies)
+                      and supported by each line item's price.
+                    type: string
+                    x-kubernetes-validations:
+                    - message: currency is immutable
+                      rule: self == oldSelf
+                  customFields:
+                    description: Collect additional information from your customer
+                      using custom fields. Up to 3 fields are supported. You can't
+                      set this parameter if `ui_mode` is `elements`.
+                    items:
+                      properties:
+                        dropdown:
+                          properties:
+                            defaultValue:
+                              type: string
+                            options:
+                              items:
+                                properties:
+                                  label:
+                                    type: string
+                                  value:
+                                    type: string
+                                required:
+                                - label
+                                - value
+                                type: object
+                              type: array
+                          required:
+                          - options
+                          type: object
+                        key:
+                          type: string
+                        label:
+                          properties:
+                            custom:
+                              type: string
+                            type:
+                              enum:
+                              - custom
+                              type: string
+                          required:
+                          - custom
+                          - type
+                          type: object
+                        numeric:
+                          properties:
+                            defaultValue:
+                              type: string
+                            maximumLength:
+                              format: int64
+                              type: integer
+                            minimumLength:
+                              format: int64
+                              type: integer
+                          type: object
+                        optional:
+                          type: boolean
+                        text:
+                          properties:
+                            defaultValue:
+                              type: string
+                            maximumLength:
+                              format: int64
+                              type: integer
+                            minimumLength:
+                              format: int64
+                              type: integer
+                          type: object
+                        type:
+                          enum:
+                          - dropdown
+                          - numeric
+                          - text
+                          type: string
+                      required:
+                      - key
+                      - label
+                      - type
+                      type: object
+                    type: array
+                  customText:
+                    description: Display additional text for your customers using
+                      custom text. You can't set this parameter if `ui_mode` is `elements`.
+                    properties:
+                      afterSubmit:
+                        properties:
+                          message:
+                            type: string
+                        required:
+                        - message
+                        type: object
+                      shippingAddress:
+                        properties:
+                          message:
+                            type: string
+                        required:
+                        - message
+                        type: object
+                      submit:
+                        properties:
+                          message:
+                            type: string
+                        required:
+                        - message
+                        type: object
+                      termsOfServiceAcceptance:
+                        properties:
+                          message:
+                            type: string
+                        required:
+                        - message
+                        type: object
+                    type: object
+                  customerCreation:
+                    description: Configures whether [checkout sessions](https://docs.stripe.com/api/checkout/sessions)
+                      created by this payment link create a [Customer](https://docs.stripe.com/api/customers).
+                    enum:
+                    - always
+                    - if_required
+                    type: string
+                  inactiveMessage:
+                    description: The custom message to be displayed to a customer
+                      when a payment link is no longer active.
+                    type: string
+                  invoiceCreation:
+                    description: Generate a post-purchase Invoice for one-time payments.
+                    properties:
+                      enabled:
+                        type: boolean
+                      invoiceData:
+                        properties:
+                          accountTaxIds:
+                            items:
+                              type: string
+                            type: array
+                          customFields:
+                            items:
+                              properties:
+                                name:
+                                  type: string
+                                value:
+                                  type: string
+                              required:
+                              - name
+                              - value
+                              type: object
+                            type: array
+                          description:
+                            type: string
+                          footer:
+                            type: string
+                          issuer:
+                            properties:
+                              account:
+                                type: string
+                              type:
+                                enum:
+                                - account
+                                - self
+                                type: string
+                            required:
+                            - type
+                            type: object
+                          metadata:
+                            additionalProperties:
+                              type: string
+                            type: object
+                          renderingOptions:
+                            properties:
+                              amountTaxDisplay:
+                                enum:
+                                - ""
+                                - exclude_tax
+                                - include_inclusive_tax
+                                type: string
+                              template:
+                                type: string
+                            type: object
+                        type: object
+                    required:
+                    - enabled
+                    type: object
+                  lineItems:
+                    description: The line items representing what is being sold. Each
+                      line item represents an item being sold. Up to 20 line items
+                      are supported.
+                    items:
+                      properties:
+                        adjustableQuantity:
+                          properties:
+                            enabled:
+                              type: boolean
+                            maximum:
+                              format: int64
+                              type: integer
+                            minimum:
+                              format: int64
+                              type: integer
+                          required:
+                          - enabled
+                          type: object
+                        price:
+                          type: string
+                        priceData:
+                          properties:
+                            currency:
+                              type: string
+                            product:
+                              type: string
+                            productData:
+                              properties:
+                                description:
+                                  type: string
+                                images:
+                                  items:
+                                    type: string
+                                  type: array
+                                metadata:
+                                  additionalProperties:
+                                    type: string
+                                  type: object
+                                name:
+                                  type: string
+                                taxCode:
+                                  type: string
+                                taxDetails:
+                                  properties:
+                                    performanceLocation:
+                                      type: string
+                                    taxCode:
+                                      type: string
+                                  type: object
+                                unitLabel:
+                                  type: string
+                              required:
+                              - name
+                              type: object
+                            recurring:
+                              properties:
+                                interval:
+                                  enum:
+                                  - day
+                                  - month
+                                  - week
+                                  - year
+                                  type: string
+                                intervalCount:
+                                  format: int64
+                                  type: integer
+                              required:
+                              - interval
+                              type: object
+                            taxBehavior:
+                              enum:
+                              - exclusive
+                              - inclusive
+                              - unspecified
+                              type: string
+                            unitAmount:
+                              format: int64
+                              type: integer
+                            unitAmountDecimal:
+                              type: string
+                          required:
+                          - currency
+                          type: object
+                        quantity:
+                          format: int64
+                          type: integer
+                      required:
+                      - quantity
+                      type: object
+                    type: array
+                  managedPayments:
+                    description: Settings for Managed Payments for this Payment Link
+                      and resulting [CheckoutSessions](/api/checkout/sessions/object),
+                      [PaymentIntents](/api/payment_intents/object), [Invoices](/api/invoices/object),
+                      and [Subscriptions](/api/subscriptions/object).
+                    properties:
+                      enabled:
+                        type: boolean
+                    type: object
+                    x-kubernetes-validations:
+                    - message: managedPayments is immutable
+                      rule: self == oldSelf
+                  metadata:
+                    additionalProperties:
+                      type: string
+                    description: Set of [key-value pairs](https://docs.stripe.com/api/metadata)
+                      that you can attach to an object. This can be useful for storing
+                      additional information about the object in a structured format.
+                      Individual keys can be unset by posting an empty value to them.
+                      All keys can be unset by posting an empty value to `metadata`.
+                      Metadata associated with this Payment Link will automatically
+                      be copied to [checkout sessions](https://docs.stripe.com/api/checkout/sessions)
+                      created by this payment link.
+                    type: object
+                  nameCollection:
+                    description: Controls settings applied for collecting the customer's
+                      name.
+                    properties:
+                      business:
+                        properties:
+                          enabled:
+                            type: boolean
+                          optional:
+                            type: boolean
+                        required:
+                        - enabled
+                        type: object
+                      individual:
+                        properties:
+                          enabled:
+                            type: boolean
+                          optional:
+                            type: boolean
+                        required:
+                        - enabled
+                        type: object
+                    type: object
+                  onBehalfOf:
+                    description: The account on behalf of which to charge.
+                    type: string
+                  onBehalfOfRef:
+                    description: A NamespacedReference to a named object.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                      namespace:
+                        description: Namespace of the referenced object
+                        type: string
+                      policy:
+                        description: Policies for referencing.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: |-
+                              Resolution specifies whether resolution of this reference is required.
+                              The default is 'Required', which means the reconcile will fail if the
+                              reference cannot be resolved. 'Optional' means this reference will be
+                              a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: |-
+                              Resolve specifies when this reference should be resolved. The default
+                              is 'IfNotPresent', which will attempt to resolve the reference only when
+                              the corresponding field is not present. Use 'Always' to resolve the
+                              reference on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
+                    required:
+                    - name
+                    type: object
+                  onBehalfOfSelector:
+                    description: NamespacedSelector selects a namespaced object.
+                    properties:
+                      matchControllerRef:
+                        description: |-
+                          MatchControllerRef ensures an object with the same controller reference
+                          as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
+                        type: object
+                      namespace:
+                        description: Namespace for the selector
+                        type: string
+                      policy:
+                        description: Policies for selection.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: |-
+                              Resolution specifies whether resolution of this reference is required.
+                              The default is 'Required', which means the reconcile will fail if the
+                              reference cannot be resolved. 'Optional' means this reference will be
+                              a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: |-
+                              Resolve specifies when this reference should be resolved. The default
+                              is 'IfNotPresent', which will attempt to resolve the reference only when
+                              the corresponding field is not present. Use 'Always' to resolve the
+                              reference on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
+                    type: object
+                  optionalItems:
+                    description: |-
+                      A list of optional items the customer can add to their order at checkout. Use this parameter to pass one-time or recurring [Prices](https://docs.stripe.com/api/prices).
+                      There is a maximum of 10 optional items allowed on a payment link, and the existing limits on the number of line items allowed on a payment link apply to the combined number of line items and optional items.
+                      There is a maximum of 20 combined line items and optional items.
+                    items:
+                      properties:
+                        adjustableQuantity:
+                          properties:
+                            enabled:
+                              type: boolean
+                            maximum:
+                              format: int64
+                              type: integer
+                            minimum:
+                              format: int64
+                              type: integer
+                          required:
+                          - enabled
+                          type: object
+                        price:
+                          type: string
+                        quantity:
+                          format: int64
+                          type: integer
+                      required:
+                      - price
+                      - quantity
+                      type: object
+                    type: array
+                  paymentIntentData:
+                    description: A subset of parameters to be passed to PaymentIntent
+                      creation for Checkout Sessions in `payment` mode.
+                    properties:
+                      captureMethod:
+                        enum:
+                        - automatic
+                        - automatic_async
+                        - manual
+                        type: string
+                      description:
+                        type: string
+                      metadata:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      setupFutureUsage:
+                        enum:
+                        - off_session
+                        - on_session
+                        type: string
+                      statementDescriptor:
+                        type: string
+                      statementDescriptorSuffix:
+                        type: string
+                      transferGroup:
+                        type: string
+                    type: object
+                  paymentMethodCollection:
+                    description: |-
+                      Specify whether Checkout should collect a payment method. When set to `if_required`, Checkout will not collect a payment method when the total due for the session is 0.This may occur if the Checkout Session includes a free trial or a discount.
+
+                      Can only be set in `subscription` mode. Defaults to `always`.
+
+                      If you'd like information on how to collect a payment method outside of Checkout, read the guide on [configuring subscriptions with a free trial](https://docs.stripe.com/payments/checkout/free-trials).
+                    enum:
+                    - always
+                    - if_required
+                    type: string
+                  paymentMethodOptions:
+                    description: Payment-method-specific configuration.
+                    properties:
+                      card:
+                        properties:
+                          restrictions:
+                            properties:
+                              brandsBlocked:
+                                items:
+                                  enum:
+                                  - american_express
+                                  - discover_global_network
+                                  - mastercard
+                                  - visa
+                                  type: string
+                                type: array
+                            type: object
+                        type: object
+                    type: object
+                  paymentMethodTypes:
+                    description: The list of payment method types that customers can
+                      use. If no value is passed, Stripe will dynamically show relevant
+                      payment methods from your [payment method settings](https://dashboard.stripe.com/settings/payment_methods)
+                      (20+ payment methods [supported](https://docs.stripe.com/payments/payment-methods/integration-options#payment-method-product-support)).
+                    items:
+                      enum:
+                      - affirm
+                      - afterpay_clearpay
+                      - alipay
+                      - alma
+                      - au_becs_debit
+                      - bacs_debit
+                      - bancontact
+                      - billie
+                      - bizum
+                      - blik
+                      - boleto
+                      - card
+                      - cashapp
+                      - eps
+                      - fpx
+                      - giropay
+                      - grabpay
+                      - ideal
+                      - klarna
+                      - konbini
+                      - link
+                      - mb_way
+                      - mobilepay
+                      - multibanco
+                      - oxxo
+                      - p24
+                      - pay_by_bank
+                      - paynow
+                      - paypal
+                      - paypay
+                      - payto
+                      - pix
+                      - promptpay
+                      - satispay
+                      - sepa_debit
+                      - sequra
+                      - sofort
+                      - sunbit
+                      - swish
+                      - twint
+                      - upi
+                      - us_bank_account
+                      - wechat_pay
+                      - zip
+                      type: string
+                    type: array
+                  phoneNumberCollection:
+                    description: |-
+                      Controls phone number collection settings during checkout.
+
+                      We recommend that you review your privacy policy and check with your legal contacts.
+                    properties:
+                      enabled:
+                        type: boolean
+                    required:
+                    - enabled
+                    type: object
+                  restrictions:
+                    description: Settings that restrict the usage of a payment link.
+                    properties:
+                      completedSessions:
+                        properties:
+                          limit:
+                            format: int64
+                            type: integer
+                        required:
+                        - limit
+                        type: object
+                    required:
+                    - completedSessions
+                    type: object
+                  shippingAddressCollection:
+                    description: Configuration for collecting the customer's shipping
+                      address.
+                    properties:
+                      allowedCountries:
+                        items:
+                          enum:
+                          - AC
+                          - AD
+                          - AE
+                          - AF
+                          - AG
+                          - AI
+                          - AL
+                          - AM
+                          - AO
+                          - AQ
+                          - AR
+                          - AT
+                          - AU
+                          - AW
+                          - AX
+                          - AZ
+                          - BA
+                          - BB
+                          - BD
+                          - BE
+                          - BF
+                          - BG
+                          - BH
+                          - BI
+                          - BJ
+                          - BL
+                          - BM
+                          - BN
+                          - BO
+                          - BQ
+                          - BR
+                          - BS
+                          - BT
+                          - BV
+                          - BW
+                          - BY
+                          - BZ
+                          - CA
+                          - CD
+                          - CF
+                          - CG
+                          - CH
+                          - CI
+                          - CK
+                          - CL
+                          - CM
+                          - CN
+                          - CO
+                          - CR
+                          - CV
+                          - CW
+                          - CY
+                          - CZ
+                          - DE
+                          - DJ
+                          - DK
+                          - DM
+                          - DO
+                          - DZ
+                          - EC
+                          - EE
+                          - EG
+                          - EH
+                          - ER
+                          - ES
+                          - ET
+                          - FI
+                          - FJ
+                          - FK
+                          - FO
+                          - FR
+                          - GA
+                          - GB
+                          - GD
+                          - GE
+                          - GF
+                          - GG
+                          - GH
+                          - GI
+                          - GL
+                          - GM
+                          - GN
+                          - GP
+                          - GQ
+                          - GR
+                          - GS
+                          - GT
+                          - GU
+                          - GW
+                          - GY
+                          - HK
+                          - HN
+                          - HR
+                          - HT
+                          - HU
+                          - ID
+                          - IE
+                          - IL
+                          - IM
+                          - IN
+                          - IO
+                          - IQ
+                          - IS
+                          - IT
+                          - JE
+                          - JM
+                          - JO
+                          - JP
+                          - KE
+                          - KG
+                          - KH
+                          - KI
+                          - KM
+                          - KN
+                          - KR
+                          - KW
+                          - KY
+                          - KZ
+                          - LA
+                          - LB
+                          - LC
+                          - LI
+                          - LK
+                          - LR
+                          - LS
+                          - LT
+                          - LU
+                          - LV
+                          - LY
+                          - MA
+                          - MC
+                          - MD
+                          - ME
+                          - MF
+                          - MG
+                          - MK
+                          - ML
+                          - MM
+                          - MN
+                          - MO
+                          - MQ
+                          - MR
+                          - MS
+                          - MT
+                          - MU
+                          - MV
+                          - MW
+                          - MX
+                          - MY
+                          - MZ
+                          - NA
+                          - NC
+                          - NE
+                          - NG
+                          - NI
+                          - NL
+                          - "NO"
+                          - NP
+                          - NR
+                          - NU
+                          - NZ
+                          - OM
+                          - PA
+                          - PE
+                          - PF
+                          - PG
+                          - PH
+                          - PK
+                          - PL
+                          - PM
+                          - PN
+                          - PR
+                          - PS
+                          - PT
+                          - PY
+                          - QA
+                          - RE
+                          - RO
+                          - RS
+                          - RU
+                          - RW
+                          - SA
+                          - SB
+                          - SC
+                          - SD
+                          - SE
+                          - SG
+                          - SH
+                          - SI
+                          - SJ
+                          - SK
+                          - SL
+                          - SM
+                          - SN
+                          - SO
+                          - SR
+                          - SS
+                          - ST
+                          - SV
+                          - SX
+                          - SZ
+                          - TA
+                          - TC
+                          - TD
+                          - TF
+                          - TG
+                          - TH
+                          - TJ
+                          - TK
+                          - TL
+                          - TM
+                          - TN
+                          - TO
+                          - TR
+                          - TT
+                          - TV
+                          - TW
+                          - TZ
+                          - UA
+                          - UG
+                          - US
+                          - UY
+                          - UZ
+                          - VA
+                          - VC
+                          - VE
+                          - VG
+                          - VN
+                          - VU
+                          - WF
+                          - WS
+                          - XK
+                          - YE
+                          - YT
+                          - ZA
+                          - ZM
+                          - ZW
+                          - ZZ
+                          type: string
+                        type: array
+                    required:
+                    - allowedCountries
+                    type: object
+                  shippingOptions:
+                    description: The shipping rate options to apply to [checkout sessions](https://docs.stripe.com/api/checkout/sessions)
+                      created by this payment link.
+                    items:
+                      properties:
+                        shippingRate:
+                          type: string
+                      type: object
+                    type: array
+                  submitType:
+                    description: 'Describes the type of transaction being performed
+                      in order to customize relevant text on the page, such as the
+                      submit button. Changing this value will also affect the hostname
+                      in the [url](https://docs.stripe.com/api/payment_links/payment_links/object#url)
+                      property (example: `donate.stripe.com`).'
+                    enum:
+                    - auto
+                    - book
+                    - donate
+                    - pay
+                    - subscribe
+                    type: string
+                  subscriptionData:
+                    description: When creating a subscription, the specified configuration
+                      data will be used. There must be at least one line item with
+                      a recurring price to use `subscription_data`.
+                    properties:
+                      description:
+                        type: string
+                      invoiceSettings:
+                        properties:
+                          issuer:
+                            properties:
+                              account:
+                                type: string
+                              type:
+                                enum:
+                                - account
+                                - self
+                                type: string
+                            required:
+                            - type
+                            type: object
+                        type: object
+                      metadata:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      trialPeriodDays:
+                        format: int64
+                        type: integer
+                      trialSettings:
+                        properties:
+                          endBehavior:
+                            properties:
+                              missingPaymentMethod:
+                                enum:
+                                - cancel
+                                - create_invoice
+                                - pause
+                                type: string
+                            required:
+                            - missingPaymentMethod
+                            type: object
+                        required:
+                        - endBehavior
+                        type: object
+                    type: object
+                  taxIdCollection:
+                    description: Controls tax ID collection during checkout.
+                    properties:
+                      enabled:
+                        type: boolean
+                      required:
+                        enum:
+                        - if_supported
+                        - never
+                        type: string
+                    required:
+                    - enabled
+                    type: object
+                  transferData:
+                    description: The account (if any) the payments will be attributed
+                      to for tax reporting, and where funds from each payment will
+                      be transferred to.
+                    properties:
+                      amount:
+                        format: int64
+                        type: integer
+                      destination:
+                        type: string
+                    required:
+                    - destination
+                    type: object
+                required:
+                - lineItems
+                type: object
+              managementPolicies:
+                default:
+                - '*'
+                description: |-
+                  THIS IS A BETA FIELD. It is on by default but can be opted out
+                  through a Crossplane feature flag.
+                  ManagementPolicies specify the array of actions Crossplane is allowed to
+                  take on the managed and external resources.
+                  See the design doc for more information: https://github.com/crossplane/crossplane/blob/499895a25d1a1a0ba1604944ef98ac7a1a71f197/design/design-doc-observe-only-resources.md?plain=1#L223
+                  and this one: https://github.com/crossplane/crossplane/blob/444267e84783136daa93568b364a5f01228cacbe/design/one-pager-ignore-changes.md
+                items:
+                  description: |-
+                    A ManagementAction represents an action that the Crossplane controllers
+                    can take on an external resource.
+                  enum:
+                  - Observe
+                  - Create
+                  - Update
+                  - Delete
+                  - LateInitialize
+                  - '*'
+                  type: string
+                type: array
+              providerConfigRef:
+                default:
+                  kind: ClusterProviderConfig
+                  name: default
+                description: |-
+                  ProviderConfigReference specifies how the provider that will be used to
+                  create, observe, update, and delete this managed resource should be
+                  configured.
+                properties:
+                  kind:
+                    description: Kind of the referenced object.
+                    type: string
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - kind
+                - name
+                type: object
+              writeConnectionSecretToRef:
+                description: |-
+                  WriteConnectionSecretToReference specifies the namespace and name of a
+                  Secret to which any connection details for this managed resource should
+                  be written. Connection details frequently include the endpoint, username,
+                  and password required to connect to the managed resource.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                required:
+                - name
+                type: object
+            required:
+            - forProvider
+            type: object
+          status:
+            properties:
+              atProvider:
+                properties:
+                  active:
+                    description: Whether the payment link's `url` is active. If `false`,
+                      customers visiting the URL will be shown a page saying that
+                      the link has been deactivated.
+                    type: boolean
+                  afterCompletion:
+                    x-kubernetes-preserve-unknown-fields: true
+                  allowPromotionCodes:
+                    description: Whether user redeemable promotion codes are enabled.
+                    type: boolean
+                  application:
+                    description: The ID of the Connect application that created the
+                      Payment Link.
+                    type: string
+                  applicationFeeAmount:
+                    description: The amount of the application fee (if any) that will
+                      be requested to be applied to the payment and transferred to
+                      the application owner's Stripe account.
+                    format: int64
+                    type: integer
+                  applicationFeePercent:
+                    description: This represents the percentage of the subscription
+                      invoice total that will be transferred to the application owner's
+                      Stripe account.
+                    type: number
+                  automaticTax:
+                    x-kubernetes-preserve-unknown-fields: true
+                  billingAddressCollection:
+                    description: Configuration for collecting the customer's billing
+                      address. Defaults to `auto`.
+                    type: string
+                  consentCollection:
+                    description: When set, provides configuration to gather active
+                      consent from customers.
+                    x-kubernetes-preserve-unknown-fields: true
+                  currency:
+                    description: Three-letter [ISO currency code](https://www.iso.org/iso-4217-currency-codes.html),
+                      in lowercase. Must be a [supported currency](https://stripe.com/docs/currencies).
+                    type: string
+                  customFields:
+                    description: Collect additional information from your customer
+                      using custom fields. Up to 3 fields are supported. You can't
+                      set this parameter if `ui_mode` is `elements`.
+                    x-kubernetes-preserve-unknown-fields: true
+                  customText:
+                    x-kubernetes-preserve-unknown-fields: true
+                  customerCreation:
+                    description: Configuration for Customer creation during checkout.
+                    type: string
+                  id:
+                    description: Unique identifier for the object.
+                    type: string
+                  inactiveMessage:
+                    description: The custom message to be displayed to a customer
+                      when a payment link is no longer active.
+                    type: string
+                  invoiceCreation:
+                    description: Configuration for creating invoice for payment mode
+                      payment links.
+                    x-kubernetes-preserve-unknown-fields: true
+                  lineItems:
+                    description: The line items representing what is being sold.
+                    x-kubernetes-preserve-unknown-fields: true
+                  livemode:
+                    description: If the object exists in live mode, the value is `true`.
+                      If the object exists in test mode, the value is `false`.
+                    type: boolean
+                  managedPayments:
+                    description: Settings for Managed Payments for this Payment Link
+                      and resulting [CheckoutSessions](/api/checkout/sessions/object),
+                      [PaymentIntents](/api/payment_intents/object), [Invoices](/api/invoices/object),
+                      and [Subscriptions](/api/subscriptions/object).
+                    x-kubernetes-preserve-unknown-fields: true
+                  metadata:
+                    additionalProperties:
+                      type: string
+                    description: Set of [key-value pairs](https://docs.stripe.com/api/metadata)
+                      that you can attach to an object. This can be useful for storing
+                      additional information about the object in a structured format.
+                    type: object
+                  nameCollection:
+                    x-kubernetes-preserve-unknown-fields: true
+                  object:
+                    description: String representing the object's type. Objects of
+                      the same type share the same value.
+                    type: string
+                  onBehalfOf:
+                    description: The account on behalf of which to charge. See the
+                      [Connect documentation](https://support.stripe.com/questions/sending-invoices-on-behalf-of-connected-accounts)
+                      for details.
+                    type: string
+                  optionalItems:
+                    description: The optional items presented to the customer at checkout.
+                    x-kubernetes-preserve-unknown-fields: true
+                  paymentIntentData:
+                    description: Indicates the parameters to be passed to PaymentIntent
+                      creation during checkout.
+                    x-kubernetes-preserve-unknown-fields: true
+                  paymentMethodCollection:
+                    description: Configuration for collecting a payment method during
+                      checkout. Defaults to `always`.
+                    type: string
+                  paymentMethodOptions:
+                    description: Payment-method-specific configuration.
+                    x-kubernetes-preserve-unknown-fields: true
+                  paymentMethodTypes:
+                    description: The list of payment method types that customers can
+                      use. When `null`, Stripe will dynamically show relevant payment
+                      methods you've enabled in your [payment method settings](https://dashboard.stripe.com/settings/payment_methods).
+                    x-kubernetes-preserve-unknown-fields: true
+                  phoneNumberCollection:
+                    x-kubernetes-preserve-unknown-fields: true
+                  restrictions:
+                    description: Settings that restrict the usage of a payment link.
+                    x-kubernetes-preserve-unknown-fields: true
+                  shippingAddressCollection:
+                    description: Configuration for collecting the customer's shipping
+                      address.
+                    x-kubernetes-preserve-unknown-fields: true
+                  shippingOptions:
+                    description: The shipping rate options applied to the session.
+                    x-kubernetes-preserve-unknown-fields: true
+                  submitType:
+                    description: Indicates the type of transaction being performed
+                      which customizes relevant text on the page, such as the submit
+                      button.
+                    type: string
+                  subscriptionData:
+                    description: When creating a subscription, the specified configuration
+                      data will be used. There must be at least one line item with
+                      a recurring price to use `subscription_data`.
+                    x-kubernetes-preserve-unknown-fields: true
+                  taxIdCollection:
+                    x-kubernetes-preserve-unknown-fields: true
+                  transferData:
+                    description: The account (if any) the payments will be attributed
+                      to for tax reporting, and where funds from each payment will
+                      be transferred to.
+                    x-kubernetes-preserve-unknown-fields: true
+                  url:
+                    description: The public URL that can be shared with customers.
+                    type: string
+                type: object
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        LastTransitionTime is the last time this condition transitioned from one
+                        status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        A Message containing details about this condition's last transition from
+                        one status to another, if any.
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        ObservedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      type: integer
+                    reason:
+                      description: A Reason for this condition's last transition from
+                        one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
+                      type: string
+                    type:
+                      description: |-
+                        Type of this condition. At most one of each condition type may apply to
+                        a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+              lastHandledReconcileAt:
+                description: |-
+                  LastHandledReconcileAt holds the value of the most recent
+                  reconcile-requested-at annotation token that the controller has
+                  processed. Users can compare this to the annotation to determine
+                  whether a reconcile request has been handled.
+                type: string
+              observedGeneration:
+                description: |-
+                  ObservedGeneration is the latest metadata.generation
+                  which resulted in either a ready state, or stalled due to error
+                  it can not recover from without human intervention.
+                format: int64
+                type: integer
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

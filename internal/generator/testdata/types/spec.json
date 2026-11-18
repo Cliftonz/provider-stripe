@@ -1,0 +1,159 @@
+{
+  "paths": {
+    "/v1/products": {
+      "post": {"requestBody": {"content": {"application/x-www-form-urlencoded": {"schema": {
+        "properties": {
+          "name": {"description": "The product's name.", "maxLength": 5000, "type": "string"},
+          "active": {"type": "boolean"},
+          "url": {"anyOf": [{"enum": [""], "type": "string"}, {"type": "string"}], "description": "The product URL – public — or empty."},
+          "expand": {"items": {"type": "string"}, "type": "array"}
+        },
+        "required": ["name"],
+        "type": "object"
+      }}}}}
+    },
+    "/v1/products/{id}": {
+      "get": {"responses": {"200": {"content": {"application/json": {"schema": {"anyOf": [{"$ref": "#/components/schemas/product"}, {"$ref": "#/components/schemas/deleted_product"}]}}}}}},
+      "post": {"requestBody": {"content": {"application/x-www-form-urlencoded": {"schema": {
+        "properties": {
+          "name": {"maxLength": 5000, "type": "string"},
+          "active": {"type": "boolean"},
+          "description": {"anyOf": [{"maxLength": 40000, "type": "string"}, {"enum": [""], "type": "string"}], "description": "The product's description."}
+        },
+        "type": "object"
+      }}}}},
+      "delete": {}
+    },
+    "/v1/prices": {
+      "post": {"requestBody": {"content": {"application/x-www-form-urlencoded": {"schema": {
+        "properties": {
+          "currency": {"description": "Three-letter ISO currency code.", "format": "currency", "type": "string"},
+          "product": {"description": "The ID of the Product.", "maxLength": 5000, "type": "string"},
+          "active": {"type": "boolean"},
+          "unit_amount": {"type": "integer"},
+          "unit_scale": {"type": "number"},
+          "tier_cap": {"anyOf": [{"enum": ["inf"], "type": "string"}, {"type": "integer"}]},
+          "nickname": {"anyOf": [{"maxLength": 5000, "type": "string"}, {"enum": [""], "type": "string"}]},
+          "tax_behavior": {"enum": ["exclusive", "inclusive", "unspecified"], "type": "string"},
+          "metadata": {"additionalProperties": {"type": "string"}, "type": "object"},
+          "recurring": {
+            "properties": {
+              "interval": {"enum": ["day", "month"], "type": "string"},
+              "interval_count": {"type": "integer"}
+            },
+            "required": ["interval"],
+            "title": "recurring",
+            "type": "object"
+          },
+          "currency_options": {
+            "additionalProperties": {
+              "properties": {"unit_amount": {"type": "integer"}},
+              "title": "currency_option",
+              "type": "object"
+            },
+            "type": "object"
+          },
+          "tax_rates": {"anyOf": [{"items": {"maxLength": 5000, "type": "string"}, "type": "array"}, {"enum": [""], "type": "string"}]},
+          "tiers": {
+            "items": {
+              "properties": {
+                "unit_amount": {"type": "integer"},
+                "up_to": {"anyOf": [{"enum": ["inf"], "type": "string"}, {"type": "integer"}]}
+              },
+              "required": ["up_to"],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "expand": {"items": {"type": "string"}, "type": "array"}
+        },
+        "required": ["currency", "product"],
+        "type": "object"
+      }}}}}
+    },
+    "/v1/prices/{price}": {
+      "get": {"responses": {"200": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/price"}}}}}},
+      "post": {"requestBody": {"content": {"application/x-www-form-urlencoded": {"schema": {
+        "properties": {
+          "active": {"type": "boolean"},
+          "nickname": {"anyOf": [{"maxLength": 5000, "type": "string"}, {"enum": [""], "type": "string"}]},
+          "tax_behavior": {"enum": ["exclusive", "inclusive", "unspecified"], "type": "string"},
+          "metadata": {"anyOf": [{"additionalProperties": {"type": "string"}, "type": "object"}, {"enum": [""], "type": "string"}]},
+          "lookup_key": {"description": "A lookup key.", "maxLength": 200, "type": "string"}
+        },
+        "type": "object"
+      }}}}}
+    },
+    "/v1/tax_rates": {
+      "post": {"requestBody": {"content": {"application/x-www-form-urlencoded": {"schema": {
+        "properties": {"display_name": {"type": "string"}},
+        "required": ["display_name"],
+        "type": "object"
+      }}}}}
+    },
+    "/v1/tax_rates/{tax_rate}": {
+      "get": {"responses": {"200": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/tax_rate"}}}}}}
+    },
+    "/v1/apps/installs": {
+      "post": {"requestBody": {"content": {"application/x-www-form-urlencoded": {"schema": {
+        "properties": {
+          "app": {"description": "The app to install.", "type": "string"},
+          "price": {"type": "string"},
+          "redirect_url": {"type": "string"},
+          "settings": {"properties": {"accessible": {"properties": {}, "type": "object"}}, "type": "object"},
+          "scopes": {"items": {"enum": ["read", "write"], "type": "string"}, "type": "array"}
+        },
+        "required": ["app"],
+        "type": "object"
+      }}}}}
+    },
+    "/v1/apps/installs/{id}": {
+      "get": {"responses": {"200": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/apps.install"}}}}}}
+    }
+  },
+  "components": {
+    "schemas": {
+      "product": {
+        "description": "Products describe the specific goods or services you offer.",
+        "properties": {
+          "id": {"description": "Unique identifier for the object.", "maxLength": 5000, "type": "string"},
+          "active": {"description": "Whether the product is available for purchase.", "type": "boolean"},
+          "default_price": {"anyOf": [{"maxLength": 5000, "type": "string"}, {"$ref": "#/components/schemas/price"}], "nullable": true, "x-expansionResources": {"oneOf": [{"$ref": "#/components/schemas/price"}]}},
+          "metadata": {"additionalProperties": {"maxLength": 500, "type": "string"}, "type": "object"},
+          "created": {"format": "unix-time", "type": "integer"}
+        },
+        "type": "object"
+      },
+      "price": {
+        "description": "Prices define the unit cost of products.",
+        "properties": {
+          "custom_unit_amount": {"$ref": "#/components/schemas/custom_unit_amount"},
+          "extra": {"additionalProperties": true, "type": "object"},
+          "id": {"maxLength": 5000, "type": "string"},
+          "object": {"enum": ["price"], "type": "string"},
+          "product": {"anyOf": [{"maxLength": 5000, "type": "string"}, {"$ref": "#/components/schemas/product"}, {"$ref": "#/components/schemas/deleted_product"}], "description": "The ID of the product this price is associated with."},
+          "recurring": {"anyOf": [{"$ref": "#/components/schemas/recurring"}], "nullable": true},
+          "tiers": {"items": {"$ref": "#/components/schemas/price_tier"}, "type": "array"},
+          "unit_amount": {"nullable": true, "type": "integer"},
+          "percentage": {"nullable": true, "type": "number"}
+        },
+        "type": "object"
+      },
+      "tax_rate": {
+        "description": "Tax rates apply tax to invoices.",
+        "properties": {"id": {"type": "string"}},
+        "type": "object"
+      },
+      "apps.install": {
+        "description": "An installed app.",
+        "properties": {
+          "id": {"type": "string"},
+          "client_secret": {"type": "string"},
+          "secret": {"type": "string"},
+          "status": {"enum": ["active", "inactive"], "type": "string"}
+        },
+        "type": "object"
+      }
+    }
+  }
+}

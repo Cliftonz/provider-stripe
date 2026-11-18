@@ -1,0 +1,1698 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.20.1
+  name: invoices.core.stripe.m.clifton.quest
+spec:
+  group: core.stripe.m.clifton.quest
+  names:
+    categories:
+    - crossplane
+    - managed
+    - stripe
+    kind: Invoice
+    listKind: InvoiceList
+    plural: invoices
+    singular: invoice
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
+      type: string
+    - jsonPath: .metadata.annotations.crossplane\.io/external-name
+      name: EXTERNAL-NAME
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          Invoices are statements of amounts owed by a customer, and are either
+          generated one-off, or generated periodically from a subscription.
+
+          They contain [invoice items](https://docs.stripe.com/api#invoiceitems), and proration adjustments
+          that may be caused by subscription upgrades/downgrades (if necessary).
+
+          If your invoice is configured to be billed through automatic charges,
+          Stripe automatically finalizes your invoice and attempts payment. Note
+          that finalizing the invoice,
+          [when automatic](https://docs.stripe.com/invoicing/integration/automatic-advancement-collection), does
+          not happen immediately as the invoice is created. Stripe waits
+          until one hour after the last webhook was successfully sent (or the last
+          webhook timed out after failing). If you (and the platforms you may have
+          connected to) have no webhooks configured, Stripe waits one hour after
+          creation to finalize the invoice.
+
+          If your invoice is configured to be billed by sending an email, then based on your
+          [email settings](https://dashboard.stripe.com/account/billing/automatic),
+          Stripe will email the invoice to your customer and await payment. These
+          emails can contain a link to a hosted page to pay the invoice.
+
+          Stripe applies any customer credit on the account before determining the
+          amount due for the invoice (i.e., the amount that will be actually
+          charged). If the amount due for the invoice is less than Stripe's [minimum allowed charge
+          per currency](/docs/currencies#minimum-and-maximum-charge-amounts), the
+          invoice is automatically marked paid, and we add the amount due to the
+          customer's credit balance which is applied to the next invoice.
+
+          More details on the customer's credit balance are
+          [here](https://docs.stripe.com/billing/customer/balance).
+
+          Related guide: [Send invoices to customers](https://docs.stripe.com/billing/invoices/sending)
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              forProvider:
+                properties:
+                  accountTaxIds:
+                    description: The account tax IDs associated with the invoice.
+                      Only editable when the invoice is a draft.
+                    items:
+                      type: string
+                    type: array
+                  applicationFeeAmount:
+                    description: A fee in cents (or local equivalent) that will be
+                      applied to the invoice and transferred to the application owner's
+                      Stripe account. The request must be made with an OAuth key or
+                      the Stripe-Account header in order to take an application fee.
+                      For more information, see the application fees [documentation](https://docs.stripe.com/billing/invoices/connect#collecting-fees).
+                    format: int64
+                    type: integer
+                  autoAdvance:
+                    description: Controls whether Stripe performs [automatic collection](https://docs.stripe.com/invoicing/integration/automatic-advancement-collection)
+                      of the invoice. If `false`, the invoice's state doesn't automatically
+                      advance without an explicit action. Defaults to false.
+                    type: boolean
+                  automaticTax:
+                    description: Settings for automatic tax lookup for this invoice.
+                    properties:
+                      enabled:
+                        type: boolean
+                      liability:
+                        properties:
+                          account:
+                            type: string
+                          type:
+                            enum:
+                            - account
+                            - self
+                            type: string
+                        required:
+                        - type
+                        type: object
+                    required:
+                    - enabled
+                    type: object
+                  automaticallyFinalizesAt:
+                    description: The time when this invoice should be scheduled to
+                      finalize (up to 5 years in the future). The invoice is finalized
+                      at this time if it's still in draft state.
+                    format: int64
+                    type: integer
+                  collectionMethod:
+                    description: Either `charge_automatically`, or `send_invoice`.
+                      When charging automatically, Stripe will attempt to pay this
+                      invoice using the default source attached to the customer. When
+                      sending an invoice, Stripe will email this invoice to the customer
+                      with payment instructions. Defaults to `charge_automatically`.
+                    enum:
+                    - charge_automatically
+                    - send_invoice
+                    type: string
+                  currency:
+                    description: The currency to create this invoice in. Defaults
+                      to that of `customer` if not specified.
+                    type: string
+                    x-kubernetes-validations:
+                    - message: currency is immutable
+                      rule: self == oldSelf
+                  customFields:
+                    description: A list of up to 4 custom fields to be displayed on
+                      the invoice.
+                    items:
+                      properties:
+                        name:
+                          type: string
+                        value:
+                          type: string
+                      required:
+                      - name
+                      - value
+                      type: object
+                    type: array
+                  customer:
+                    description: The ID of the customer to bill.
+                    type: string
+                    x-kubernetes-validations:
+                    - message: customer is immutable
+                      rule: self == oldSelf
+                  customerAccount:
+                    description: The ID of the account to bill.
+                    type: string
+                    x-kubernetes-validations:
+                    - message: customerAccount is immutable
+                      rule: self == oldSelf
+                  customerRef:
+                    description: A NamespacedReference to a named object.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                      namespace:
+                        description: Namespace of the referenced object
+                        type: string
+                      policy:
+                        description: Policies for referencing.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: |-
+                              Resolution specifies whether resolution of this reference is required.
+                              The default is 'Required', which means the reconcile will fail if the
+                              reference cannot be resolved. 'Optional' means this reference will be
+                              a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: |-
+                              Resolve specifies when this reference should be resolved. The default
+                              is 'IfNotPresent', which will attempt to resolve the reference only when
+                              the corresponding field is not present. Use 'Always' to resolve the
+                              reference on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
+                    required:
+                    - name
+                    type: object
+                  customerSelector:
+                    description: NamespacedSelector selects a namespaced object.
+                    properties:
+                      matchControllerRef:
+                        description: |-
+                          MatchControllerRef ensures an object with the same controller reference
+                          as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
+                        type: object
+                      namespace:
+                        description: Namespace for the selector
+                        type: string
+                      policy:
+                        description: Policies for selection.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: |-
+                              Resolution specifies whether resolution of this reference is required.
+                              The default is 'Required', which means the reconcile will fail if the
+                              reference cannot be resolved. 'Optional' means this reference will be
+                              a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: |-
+                              Resolve specifies when this reference should be resolved. The default
+                              is 'IfNotPresent', which will attempt to resolve the reference only when
+                              the corresponding field is not present. Use 'Always' to resolve the
+                              reference on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
+                    type: object
+                  daysUntilDue:
+                    description: The number of days from when the invoice is created
+                      until it is due. Valid only for invoices where `collection_method=send_invoice`.
+                    format: int64
+                    type: integer
+                  defaultPaymentMethod:
+                    description: ID of the default payment method for the invoice.
+                      It must belong to the customer associated with the invoice.
+                      If not set, defaults to the subscription's default payment method,
+                      if any, or to the default payment method in the customer's invoice
+                      settings.
+                    type: string
+                  defaultPaymentMethodRef:
+                    description: A NamespacedReference to a named object.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                      namespace:
+                        description: Namespace of the referenced object
+                        type: string
+                      policy:
+                        description: Policies for referencing.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: |-
+                              Resolution specifies whether resolution of this reference is required.
+                              The default is 'Required', which means the reconcile will fail if the
+                              reference cannot be resolved. 'Optional' means this reference will be
+                              a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: |-
+                              Resolve specifies when this reference should be resolved. The default
+                              is 'IfNotPresent', which will attempt to resolve the reference only when
+                              the corresponding field is not present. Use 'Always' to resolve the
+                              reference on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
+                    required:
+                    - name
+                    type: object
+                  defaultPaymentMethodSelector:
+                    description: NamespacedSelector selects a namespaced object.
+                    properties:
+                      matchControllerRef:
+                        description: |-
+                          MatchControllerRef ensures an object with the same controller reference
+                          as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
+                        type: object
+                      namespace:
+                        description: Namespace for the selector
+                        type: string
+                      policy:
+                        description: Policies for selection.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: |-
+                              Resolution specifies whether resolution of this reference is required.
+                              The default is 'Required', which means the reconcile will fail if the
+                              reference cannot be resolved. 'Optional' means this reference will be
+                              a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: |-
+                              Resolve specifies when this reference should be resolved. The default
+                              is 'IfNotPresent', which will attempt to resolve the reference only when
+                              the corresponding field is not present. Use 'Always' to resolve the
+                              reference on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
+                    type: object
+                  defaultSource:
+                    description: ID of the default payment source for the invoice.
+                      It must belong to the customer associated with the invoice and
+                      be in a chargeable state. If not set, defaults to the subscription's
+                      default source, if any, or to the customer's default source.
+                    type: string
+                  defaultTaxRates:
+                    description: The tax rates that will apply to any line item that
+                      does not have `tax_rates` set.
+                    items:
+                      type: string
+                    type: array
+                  defaultTaxRatesRefs:
+                    items:
+                      description: A NamespacedReference to a named object.
+                      properties:
+                        name:
+                          description: Name of the referenced object.
+                          type: string
+                        namespace:
+                          description: Namespace of the referenced object
+                          type: string
+                        policy:
+                          description: Policies for referencing.
+                          properties:
+                            resolution:
+                              default: Required
+                              description: |-
+                                Resolution specifies whether resolution of this reference is required.
+                                The default is 'Required', which means the reconcile will fail if the
+                                reference cannot be resolved. 'Optional' means this reference will be
+                                a no-op if it cannot be resolved.
+                              enum:
+                              - Required
+                              - Optional
+                              type: string
+                            resolve:
+                              description: |-
+                                Resolve specifies when this reference should be resolved. The default
+                                is 'IfNotPresent', which will attempt to resolve the reference only when
+                                the corresponding field is not present. Use 'Always' to resolve the
+                                reference on every reconcile.
+                              enum:
+                              - Always
+                              - IfNotPresent
+                              type: string
+                          type: object
+                      required:
+                      - name
+                      type: object
+                    type: array
+                  defaultTaxRatesSelector:
+                    description: NamespacedSelector selects a namespaced object.
+                    properties:
+                      matchControllerRef:
+                        description: |-
+                          MatchControllerRef ensures an object with the same controller reference
+                          as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
+                        type: object
+                      namespace:
+                        description: Namespace for the selector
+                        type: string
+                      policy:
+                        description: Policies for selection.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: |-
+                              Resolution specifies whether resolution of this reference is required.
+                              The default is 'Required', which means the reconcile will fail if the
+                              reference cannot be resolved. 'Optional' means this reference will be
+                              a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: |-
+                              Resolve specifies when this reference should be resolved. The default
+                              is 'IfNotPresent', which will attempt to resolve the reference only when
+                              the corresponding field is not present. Use 'Always' to resolve the
+                              reference on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
+                    type: object
+                  description:
+                    description: An arbitrary string attached to the object. Often
+                      useful for displaying to users. Referenced as 'memo' in the
+                      Dashboard.
+                    type: string
+                  discounts:
+                    description: The coupons and promotion codes to redeem into discounts
+                      for the invoice. If not specified, inherits the discount from
+                      the invoice's customer. Pass an empty string to avoid inheriting
+                      any discounts.
+                    items:
+                      properties:
+                        coupon:
+                          type: string
+                        discount:
+                          type: string
+                        promotionCode:
+                          type: string
+                      type: object
+                    type: array
+                  dueDate:
+                    description: The date on which payment for this invoice is due.
+                      Valid only for invoices where `collection_method=send_invoice`.
+                    format: int64
+                    type: integer
+                  effectiveAt:
+                    description: The date when this invoice is in effect. Same as
+                      `finalized_at` unless overwritten. When defined, this value
+                      replaces the system-generated 'Date of issue' printed on the
+                      invoice PDF and receipt.
+                    format: int64
+                    type: integer
+                  footer:
+                    description: Footer to be displayed on the invoice.
+                    type: string
+                  fromInvoice:
+                    description: Revise an existing invoice. The new invoice will
+                      be created in `status=draft`. See the [revision documentation](https://docs.stripe.com/invoicing/invoice-revisions)
+                      for more details.
+                    properties:
+                      action:
+                        enum:
+                        - revision
+                        type: string
+                      invoice:
+                        type: string
+                    required:
+                    - action
+                    - invoice
+                    type: object
+                    x-kubernetes-validations:
+                    - message: fromInvoice is immutable
+                      rule: self == oldSelf
+                  issuer:
+                    description: The connected account that issues the invoice. The
+                      invoice is presented with the branding and support information
+                      of the specified account.
+                    properties:
+                      account:
+                        type: string
+                      type:
+                        enum:
+                        - account
+                        - self
+                        type: string
+                    required:
+                    - type
+                    type: object
+                  metadata:
+                    additionalProperties:
+                      type: string
+                    description: Set of [key-value pairs](https://docs.stripe.com/api/metadata)
+                      that you can attach to an object. This can be useful for storing
+                      additional information about the object in a structured format.
+                      Individual keys can be unset by posting an empty value to them.
+                      All keys can be unset by posting an empty value to `metadata`.
+                    type: object
+                  number:
+                    description: Set the number for this invoice. If no number is
+                      present then a number will be assigned automatically when the
+                      invoice is finalized. In many markets, regulations require invoices
+                      to be unique, sequential and / or gapless. You are responsible
+                      for ensuring this is true across all your different invoicing
+                      systems in the event that you edit the invoice number using
+                      our API. If you use only Stripe for your invoices and do not
+                      change invoice numbers, Stripe handles this aspect of compliance
+                      for you automatically.
+                    type: string
+                  onBehalfOf:
+                    description: The account (if any) for which the funds of the invoice
+                      payment are intended. If set, the invoice will be presented
+                      with the branding and support information of the specified account.
+                      See the [Invoices with Connect](https://docs.stripe.com/billing/invoices/connect)
+                      documentation for details.
+                    type: string
+                  onBehalfOfRef:
+                    description: A NamespacedReference to a named object.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                      namespace:
+                        description: Namespace of the referenced object
+                        type: string
+                      policy:
+                        description: Policies for referencing.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: |-
+                              Resolution specifies whether resolution of this reference is required.
+                              The default is 'Required', which means the reconcile will fail if the
+                              reference cannot be resolved. 'Optional' means this reference will be
+                              a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: |-
+                              Resolve specifies when this reference should be resolved. The default
+                              is 'IfNotPresent', which will attempt to resolve the reference only when
+                              the corresponding field is not present. Use 'Always' to resolve the
+                              reference on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
+                    required:
+                    - name
+                    type: object
+                  onBehalfOfSelector:
+                    description: NamespacedSelector selects a namespaced object.
+                    properties:
+                      matchControllerRef:
+                        description: |-
+                          MatchControllerRef ensures an object with the same controller reference
+                          as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
+                        type: object
+                      namespace:
+                        description: Namespace for the selector
+                        type: string
+                      policy:
+                        description: Policies for selection.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: |-
+                              Resolution specifies whether resolution of this reference is required.
+                              The default is 'Required', which means the reconcile will fail if the
+                              reference cannot be resolved. 'Optional' means this reference will be
+                              a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: |-
+                              Resolve specifies when this reference should be resolved. The default
+                              is 'IfNotPresent', which will attempt to resolve the reference only when
+                              the corresponding field is not present. Use 'Always' to resolve the
+                              reference on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
+                    type: object
+                  paymentSettings:
+                    description: Configuration settings for the PaymentIntent that
+                      is generated when the invoice is finalized.
+                    properties:
+                      defaultMandate:
+                        type: string
+                      paymentMethodOptions:
+                        properties:
+                          acssDebit:
+                            properties:
+                              mandateOptions:
+                                properties:
+                                  transactionType:
+                                    enum:
+                                    - business
+                                    - personal
+                                    type: string
+                                type: object
+                              verificationMethod:
+                                enum:
+                                - automatic
+                                - instant
+                                - microdeposits
+                                type: string
+                            type: object
+                          bancontact:
+                            properties:
+                              preferredLanguage:
+                                enum:
+                                - de
+                                - en
+                                - fr
+                                - nl
+                                type: string
+                            type: object
+                          billie:
+                            properties:
+                              companyDetails:
+                                properties:
+                                  registeredAddress:
+                                    properties:
+                                      city:
+                                        type: string
+                                      country:
+                                        type: string
+                                      line1:
+                                        type: string
+                                      line2:
+                                        type: string
+                                      postalCode:
+                                        type: string
+                                      state:
+                                        type: string
+                                    type: object
+                                  registeredName:
+                                    type: string
+                                  registrationNumber:
+                                    type: string
+                                  registrationType:
+                                    enum:
+                                    - ""
+                                    - ch_ein
+                                    - de_hrb
+                                    - dk_cvr
+                                    - es_cif
+                                    - fi_tunnus
+                                    - fr_siren
+                                    - fr_siret
+                                    - it_rea
+                                    - nl_kvk
+                                    - no_org_number
+                                    - no_pno
+                                    - se_org_number
+                                    - se_pno
+                                    - uk_crn
+                                    type: string
+                                  vat:
+                                    type: string
+                                type: object
+                              reference:
+                                type: string
+                            type: object
+                          card:
+                            properties:
+                              installments:
+                                properties:
+                                  enabled:
+                                    type: boolean
+                                  plan:
+                                    properties:
+                                      count:
+                                        format: int64
+                                        type: integer
+                                      interval:
+                                        enum:
+                                        - month
+                                        type: string
+                                      type:
+                                        enum:
+                                        - bonus
+                                        - fixed_count
+                                        - revolving
+                                        type: string
+                                    required:
+                                    - type
+                                    type: object
+                                type: object
+                              requestThreeDSecure:
+                                enum:
+                                - any
+                                - automatic
+                                - challenge
+                                type: string
+                            type: object
+                          customerBalance:
+                            properties:
+                              bankTransfer:
+                                properties:
+                                  euBankTransfer:
+                                    properties:
+                                      country:
+                                        type: string
+                                    required:
+                                    - country
+                                    type: object
+                                  type:
+                                    type: string
+                                type: object
+                              fundingType:
+                                type: string
+                            type: object
+                          payto:
+                            properties:
+                              mandateOptions:
+                                properties:
+                                  amount:
+                                    format: int64
+                                    type: integer
+                                  purpose:
+                                    enum:
+                                    - dependant_support
+                                    - government
+                                    - loan
+                                    - mortgage
+                                    - other
+                                    - pension
+                                    - personal
+                                    - retail
+                                    - salary
+                                    - tax
+                                    - utility
+                                    type: string
+                                type: object
+                            type: object
+                          pix:
+                            properties:
+                              amountIncludesIof:
+                                enum:
+                                - always
+                                - never
+                                type: string
+                              expiresAfterSeconds:
+                                format: int64
+                                type: integer
+                            type: object
+                          upi:
+                            properties:
+                              mandateOptions:
+                                properties:
+                                  amount:
+                                    format: int64
+                                    type: integer
+                                  amountType:
+                                    enum:
+                                    - fixed
+                                    - maximum
+                                    type: string
+                                  description:
+                                    type: string
+                                  endDate:
+                                    format: int64
+                                    type: integer
+                                type: object
+                            type: object
+                          usBankAccount:
+                            properties:
+                              financialConnections:
+                                properties:
+                                  filters:
+                                    properties:
+                                      accountSubcategories:
+                                        items:
+                                          enum:
+                                          - checking
+                                          - savings
+                                          type: string
+                                        type: array
+                                    type: object
+                                  permissions:
+                                    items:
+                                      enum:
+                                      - balances
+                                      - ownership
+                                      - payment_method
+                                      - transactions
+                                      type: string
+                                    type: array
+                                  prefetch:
+                                    items:
+                                      enum:
+                                      - balances
+                                      - ownership
+                                      - transactions
+                                      type: string
+                                    type: array
+                                type: object
+                              verificationMethod:
+                                enum:
+                                - automatic
+                                - instant
+                                - microdeposits
+                                type: string
+                            type: object
+                        type: object
+                      paymentMethodTypes:
+                        items:
+                          enum:
+                          - ach_credit_transfer
+                          - ach_debit
+                          - acss_debit
+                          - affirm
+                          - alipay
+                          - amazon_pay
+                          - au_becs_debit
+                          - bacs_debit
+                          - bancontact
+                          - billie
+                          - blik
+                          - boleto
+                          - card
+                          - cashapp
+                          - crypto
+                          - custom
+                          - customer_balance
+                          - eps
+                          - fpx
+                          - giropay
+                          - grabpay
+                          - ideal
+                          - jp_credit_transfer
+                          - kakao_pay
+                          - klarna
+                          - konbini
+                          - kr_card
+                          - link
+                          - mb_way
+                          - multibanco
+                          - naver_pay
+                          - nz_bank_account
+                          - p24
+                          - pay_by_bank
+                          - payco
+                          - paynow
+                          - paypal
+                          - payto
+                          - pix
+                          - promptpay
+                          - revolut_pay
+                          - satispay
+                          - sepa_credit_transfer
+                          - sepa_debit
+                          - sofort
+                          - swish
+                          - twint
+                          - upi
+                          - us_bank_account
+                          - wechat_pay
+                          type: string
+                        type: array
+                    type: object
+                  pendingInvoiceItemsBehavior:
+                    description: How to handle pending invoice items on invoice creation.
+                      Defaults to `exclude` if the parameter is omitted.
+                    enum:
+                    - exclude
+                    - include
+                    type: string
+                    x-kubernetes-validations:
+                    - message: pendingInvoiceItemsBehavior is immutable
+                      rule: self == oldSelf
+                  rendering:
+                    description: The rendering-related settings that control how invoices
+                      render in customer-facing interfaces such as the PDF or hosted
+                      invoice page.
+                    properties:
+                      amountTaxDisplay:
+                        enum:
+                        - ""
+                        - exclude_tax
+                        - include_inclusive_tax
+                        type: string
+                      pdf:
+                        properties:
+                          pageSize:
+                            enum:
+                            - a4
+                            - auto
+                            - letter
+                            type: string
+                        type: object
+                      template:
+                        type: string
+                      templateVersion:
+                        format: int64
+                        type: integer
+                    type: object
+                  shippingCost:
+                    description: Settings for the cost of shipping for this invoice.
+                    properties:
+                      shippingRate:
+                        type: string
+                      shippingRateData:
+                        properties:
+                          deliveryEstimate:
+                            properties:
+                              maximum:
+                                properties:
+                                  unit:
+                                    enum:
+                                    - business_day
+                                    - day
+                                    - hour
+                                    - month
+                                    - week
+                                    type: string
+                                  value:
+                                    format: int64
+                                    type: integer
+                                required:
+                                - unit
+                                - value
+                                type: object
+                              minimum:
+                                properties:
+                                  unit:
+                                    enum:
+                                    - business_day
+                                    - day
+                                    - hour
+                                    - month
+                                    - week
+                                    type: string
+                                  value:
+                                    format: int64
+                                    type: integer
+                                required:
+                                - unit
+                                - value
+                                type: object
+                            type: object
+                          displayName:
+                            type: string
+                          fixedAmount:
+                            properties:
+                              amount:
+                                format: int64
+                                type: integer
+                              currency:
+                                type: string
+                              currencyOptions:
+                                additionalProperties:
+                                  properties:
+                                    amount:
+                                      format: int64
+                                      type: integer
+                                    taxBehavior:
+                                      enum:
+                                      - exclusive
+                                      - inclusive
+                                      - unspecified
+                                      type: string
+                                  required:
+                                  - amount
+                                  type: object
+                                type: object
+                            required:
+                            - amount
+                            - currency
+                            type: object
+                          metadata:
+                            additionalProperties:
+                              type: string
+                            type: object
+                          taxBehavior:
+                            enum:
+                            - exclusive
+                            - inclusive
+                            - unspecified
+                            type: string
+                          taxCode:
+                            type: string
+                          type:
+                            enum:
+                            - fixed_amount
+                            type: string
+                        required:
+                        - displayName
+                        type: object
+                    type: object
+                  shippingDetails:
+                    description: Shipping details for the invoice. The Invoice PDF
+                      will use the `shipping_details` value if it is set, otherwise
+                      the PDF will render the shipping address from the customer.
+                    properties:
+                      address:
+                        properties:
+                          city:
+                            type: string
+                          country:
+                            type: string
+                          line1:
+                            type: string
+                          line2:
+                            type: string
+                          postalCode:
+                            type: string
+                          state:
+                            type: string
+                        type: object
+                      name:
+                        type: string
+                      phone:
+                        type: string
+                    required:
+                    - address
+                    - name
+                    type: object
+                  statementDescriptor:
+                    description: Extra information about a charge for the customer's
+                      credit card statement. It must contain at least one letter.
+                      If not specified and this invoice is part of a subscription,
+                      the default `statement_descriptor` will be set to the first
+                      subscription item's product's `statement_descriptor`.
+                    type: string
+                  subscription:
+                    description: The ID of the subscription to invoice, if any. If
+                      set, the created invoice will only include pending invoice items
+                      for that subscription. The subscription's billing cycle and
+                      regular subscription events won't be affected.
+                    type: string
+                    x-kubernetes-validations:
+                    - message: subscription is immutable
+                      rule: self == oldSelf
+                  subscriptionRef:
+                    description: A NamespacedReference to a named object.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                      namespace:
+                        description: Namespace of the referenced object
+                        type: string
+                      policy:
+                        description: Policies for referencing.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: |-
+                              Resolution specifies whether resolution of this reference is required.
+                              The default is 'Required', which means the reconcile will fail if the
+                              reference cannot be resolved. 'Optional' means this reference will be
+                              a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: |-
+                              Resolve specifies when this reference should be resolved. The default
+                              is 'IfNotPresent', which will attempt to resolve the reference only when
+                              the corresponding field is not present. Use 'Always' to resolve the
+                              reference on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
+                    required:
+                    - name
+                    type: object
+                  subscriptionSelector:
+                    description: NamespacedSelector selects a namespaced object.
+                    properties:
+                      matchControllerRef:
+                        description: |-
+                          MatchControllerRef ensures an object with the same controller reference
+                          as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
+                        type: object
+                      namespace:
+                        description: Namespace for the selector
+                        type: string
+                      policy:
+                        description: Policies for selection.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: |-
+                              Resolution specifies whether resolution of this reference is required.
+                              The default is 'Required', which means the reconcile will fail if the
+                              reference cannot be resolved. 'Optional' means this reference will be
+                              a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: |-
+                              Resolve specifies when this reference should be resolved. The default
+                              is 'IfNotPresent', which will attempt to resolve the reference only when
+                              the corresponding field is not present. Use 'Always' to resolve the
+                              reference on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
+                    type: object
+                  transferData:
+                    description: If specified, the funds from the invoice will be
+                      transferred to the destination and the ID of the resulting transfer
+                      will be found on the invoice's charge.
+                    properties:
+                      amount:
+                        format: int64
+                        type: integer
+                      destination:
+                        type: string
+                    required:
+                    - destination
+                    type: object
+                type: object
+              managementPolicies:
+                default:
+                - '*'
+                description: |-
+                  THIS IS A BETA FIELD. It is on by default but can be opted out
+                  through a Crossplane feature flag.
+                  ManagementPolicies specify the array of actions Crossplane is allowed to
+                  take on the managed and external resources.
+                  See the design doc for more information: https://github.com/crossplane/crossplane/blob/499895a25d1a1a0ba1604944ef98ac7a1a71f197/design/design-doc-observe-only-resources.md?plain=1#L223
+                  and this one: https://github.com/crossplane/crossplane/blob/444267e84783136daa93568b364a5f01228cacbe/design/one-pager-ignore-changes.md
+                items:
+                  description: |-
+                    A ManagementAction represents an action that the Crossplane controllers
+                    can take on an external resource.
+                  enum:
+                  - Observe
+                  - Create
+                  - Update
+                  - Delete
+                  - LateInitialize
+                  - '*'
+                  type: string
+                type: array
+              providerConfigRef:
+                default:
+                  kind: ClusterProviderConfig
+                  name: default
+                description: |-
+                  ProviderConfigReference specifies how the provider that will be used to
+                  create, observe, update, and delete this managed resource should be
+                  configured.
+                properties:
+                  kind:
+                    description: Kind of the referenced object.
+                    type: string
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - kind
+                - name
+                type: object
+              writeConnectionSecretToRef:
+                description: |-
+                  WriteConnectionSecretToReference specifies the namespace and name of a
+                  Secret to which any connection details for this managed resource should
+                  be written. Connection details frequently include the endpoint, username,
+                  and password required to connect to the managed resource.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                required:
+                - name
+                type: object
+            required:
+            - forProvider
+            type: object
+          status:
+            properties:
+              atProvider:
+                properties:
+                  accountCountry:
+                    description: The country of the business associated with this
+                      invoice, most often the business creating the invoice.
+                    type: string
+                  accountName:
+                    description: The public name of the business associated with this
+                      invoice, most often the business creating the invoice.
+                    type: string
+                  accountTaxIds:
+                    description: The account tax IDs associated with the invoice.
+                      Only editable when the invoice is a draft.
+                    x-kubernetes-preserve-unknown-fields: true
+                  amountDue:
+                    description: Final amount due at this time for this invoice. If
+                      the invoice's total is smaller than the minimum charge amount,
+                      for example, or if there is account credit that can be applied
+                      to the invoice, the `amount_due` may be 0. If there is a positive
+                      `starting_balance` for the invoice (the customer owes money),
+                      the `amount_due` will also take that into account. The charge
+                      that gets generated for the invoice will be for the amount specified
+                      in `amount_due`.
+                    format: int64
+                    type: integer
+                  amountOverpaid:
+                    description: Amount that was overpaid on the invoice. The amount
+                      overpaid is credited to the customer's credit balance.
+                    format: int64
+                    type: integer
+                  amountPaid:
+                    description: The amount, in cents (or local equivalent), that
+                      was paid.
+                    format: int64
+                    type: integer
+                  amountPaidOffStripe:
+                    description: Amount, in cents (or local equivalent), that was
+                      paid on the invoice outside of Stripe.
+                    format: int64
+                    type: integer
+                  amountRemaining:
+                    description: The difference between amount_due and amount_paid,
+                      in cents (or local equivalent).
+                    format: int64
+                    type: integer
+                  amountShipping:
+                    description: This is the sum of all the shipping amounts.
+                    format: int64
+                    type: integer
+                  application:
+                    description: ID of the Connect Application that created the invoice.
+                    type: string
+                  attemptCount:
+                    description: Number of payment attempts made for this invoice,
+                      from the perspective of the payment retry schedule. Any payment
+                      attempt counts as the first attempt, and subsequently only automatic
+                      retries increment the attempt count. In other words, manual
+                      payment attempts after the first attempt do not affect the retry
+                      schedule. If a failure is returned with a non-retryable return
+                      code, the invoice can no longer be retried unless a new payment
+                      method is obtained. Retries will continue to be scheduled, and
+                      attempt_count will continue to increment, but retries will only
+                      be executed if a new payment method is obtained.
+                    format: int64
+                    type: integer
+                  attempted:
+                    description: Whether an attempt has been made to pay the invoice.
+                      An invoice is not attempted until 1 hour after the `invoice.created`
+                      webhook, for example, so you might not want to display that
+                      invoice as unpaid to your users.
+                    type: boolean
+                  autoAdvance:
+                    description: Controls whether Stripe performs [automatic collection](https://docs.stripe.com/invoicing/integration/automatic-advancement-collection)
+                      of the invoice. If `false`, the invoice's state doesn't automatically
+                      advance without an explicit action.
+                    type: boolean
+                  automaticTax:
+                    x-kubernetes-preserve-unknown-fields: true
+                  automaticallyFinalizesAt:
+                    description: The time when this invoice is currently scheduled
+                      to be automatically finalized. The field will be `null` if the
+                      invoice is not scheduled to finalize in the future. If the invoice
+                      is not in the draft state, this field will always be `null`
+                      - see `finalized_at` for the time when an already-finalized
+                      invoice was finalized.
+                    format: int64
+                    type: integer
+                  billingReason:
+                    description: |-
+                      Indicates the reason why the invoice was created.
+
+                      * `manual`: Unrelated to a subscription, for example, created via the invoice editor.
+                      * `subscription`: No longer in use. Applies to subscriptions from before May 2018 where no distinction was made between updates, cycles, and thresholds.
+                      * `subscription_create`: A new subscription was created.
+                      * `subscription_cycle`: A subscription advanced into a new period.
+                      * `subscription_threshold`: A subscription reached a billing threshold.
+                      * `subscription_update`: A subscription was updated.
+                      * `upcoming`: Reserved for upcoming invoices created through the Create Preview Invoice API or when an `invoice.upcoming` event is generated for an upcoming invoice on a subscription.
+                    type: string
+                  collectionMethod:
+                    description: Either `charge_automatically`, or `send_invoice`.
+                      When charging automatically, Stripe will attempt to pay this
+                      invoice using the default source attached to the customer. When
+                      sending an invoice, Stripe will email this invoice to the customer
+                      with payment instructions.
+                    type: string
+                  confirmationSecret:
+                    description: The confirmation secret associated with this invoice.
+                      Currently, this contains the client_secret of the PaymentIntent
+                      that Stripe creates during invoice finalization.
+                    x-kubernetes-preserve-unknown-fields: true
+                  created:
+                    description: Time at which the object was created. Measured in
+                      seconds since the Unix epoch.
+                    format: int64
+                    type: integer
+                  currency:
+                    description: Three-letter [ISO currency code](https://www.iso.org/iso-4217-currency-codes.html),
+                      in lowercase. Must be a [supported currency](https://stripe.com/docs/currencies).
+                    type: string
+                  customFields:
+                    description: Custom fields displayed on the invoice.
+                    x-kubernetes-preserve-unknown-fields: true
+                  customer:
+                    description: The ID of the customer to bill.
+                    type: string
+                  customerAccount:
+                    description: The ID of the account representing the customer to
+                      bill.
+                    type: string
+                  customerAddress:
+                    description: The customer's address. Until the invoice is finalized,
+                      this field will equal `customer.address`. Once the invoice is
+                      finalized, this field will no longer be updated.
+                    x-kubernetes-preserve-unknown-fields: true
+                  customerEmail:
+                    description: The customer's email. Until the invoice is finalized,
+                      this field will equal `customer.email`. Once the invoice is
+                      finalized, this field will no longer be updated.
+                    type: string
+                  customerName:
+                    description: The customer's name. Until the invoice is finalized,
+                      this field will equal `customer.name`. Once the invoice is finalized,
+                      this field will no longer be updated.
+                    type: string
+                  customerPhone:
+                    description: The customer's phone number. Until the invoice is
+                      finalized, this field will equal `customer.phone`. Once the
+                      invoice is finalized, this field will no longer be updated.
+                    type: string
+                  customerShipping:
+                    description: The customer's shipping information. Until the invoice
+                      is finalized, this field will equal `customer.shipping`. Once
+                      the invoice is finalized, this field will no longer be updated.
+                    x-kubernetes-preserve-unknown-fields: true
+                  customerTaxExempt:
+                    description: The customer's tax exempt status. Until the invoice
+                      is finalized, this field will equal `customer.tax_exempt`. Once
+                      the invoice is finalized, this field will no longer be updated.
+                    type: string
+                  customerTaxIds:
+                    description: The customer's tax IDs. Until the invoice is finalized,
+                      this field will contain the same tax IDs as `customer.tax_ids`.
+                      Once the invoice is finalized, this field will no longer be
+                      updated.
+                    x-kubernetes-preserve-unknown-fields: true
+                  defaultPaymentMethod:
+                    description: ID of the default payment method for the invoice.
+                      It must belong to the customer associated with the invoice.
+                      If not set, defaults to the subscription's default payment method,
+                      if any, or to the default payment method in the customer's invoice
+                      settings.
+                    type: string
+                  defaultSource:
+                    description: ID of the default payment source for the invoice.
+                      It must belong to the customer associated with the invoice and
+                      be in a chargeable state. If not set, defaults to the subscription's
+                      default source, if any, or to the customer's default source.
+                    type: string
+                  defaultTaxRates:
+                    description: The tax rates applied to this invoice, if any.
+                    x-kubernetes-preserve-unknown-fields: true
+                  description:
+                    description: An arbitrary string attached to the object. Often
+                      useful for displaying to users. Referenced as 'memo' in the
+                      Dashboard.
+                    type: string
+                  discounts:
+                    description: The discounts applied to the invoice. Line item discounts
+                      are applied before invoice discounts. Use `expand[]=discounts`
+                      to expand each discount.
+                    x-kubernetes-preserve-unknown-fields: true
+                  dueDate:
+                    description: The date on which payment for this invoice is due.
+                      This value will be `null` for invoices where `collection_method=charge_automatically`.
+                    format: int64
+                    type: integer
+                  effectiveAt:
+                    description: The date when this invoice is in effect. Same as
+                      `finalized_at` unless overwritten. When defined, this value
+                      replaces the system-generated 'Date of issue' printed on the
+                      invoice PDF and receipt.
+                    format: int64
+                    type: integer
+                  endingBalance:
+                    description: Ending customer balance after the invoice is finalized.
+                      Invoices are finalized approximately an hour after successful
+                      webhook delivery or when payment collection is attempted for
+                      the invoice. If the invoice has not been finalized yet, this
+                      will be null.
+                    format: int64
+                    type: integer
+                  footer:
+                    description: Footer displayed on the invoice.
+                    type: string
+                  fromInvoice:
+                    description: Details of the invoice that was cloned. See the [revision
+                      documentation](https://docs.stripe.com/invoicing/invoice-revisions)
+                      for more details.
+                    x-kubernetes-preserve-unknown-fields: true
+                  hostedInvoiceUrl:
+                    description: The URL for the hosted invoice page, which allows
+                      customers to view and pay an invoice. If the invoice has not
+                      been finalized yet, this will be null.
+                    type: string
+                  id:
+                    description: Unique identifier for the object. For preview invoices
+                      created using the [create preview](https://stripe.com/docs/api/invoices/create_preview)
+                      endpoint, this id will be prefixed with `upcoming_in`.
+                    type: string
+                  invoicePdf:
+                    description: The link to download the PDF for the invoice. If
+                      the invoice has not been finalized yet, this will be null.
+                    type: string
+                  issuer:
+                    x-kubernetes-preserve-unknown-fields: true
+                  lastFinalizationError:
+                    description: The error encountered during the previous attempt
+                      to finalize the invoice. This field is cleared when the invoice
+                      is successfully finalized.
+                    x-kubernetes-preserve-unknown-fields: true
+                  latestRevision:
+                    description: The ID of the most recent non-draft revision of this
+                      invoice
+                    type: string
+                  lines:
+                    description: 'The individual line items that make up the invoice.
+                      `lines` is sorted as follows: (1) pending invoice items (including
+                      prorations) in reverse chronological order, (2) subscription
+                      items in reverse chronological order, and (3) invoice items
+                      added after invoice creation in chronological order.'
+                    x-kubernetes-preserve-unknown-fields: true
+                  livemode:
+                    description: If the object exists in live mode, the value is `true`.
+                      If the object exists in test mode, the value is `false`.
+                    type: boolean
+                  metadata:
+                    additionalProperties:
+                      type: string
+                    description: Set of [key-value pairs](https://docs.stripe.com/api/metadata)
+                      that you can attach to an object. This can be useful for storing
+                      additional information about the object in a structured format.
+                    type: object
+                  nextPaymentAttempt:
+                    description: The time at which payment will next be attempted.
+                      This value will be `null` for invoices where `collection_method=send_invoice`.
+                    format: int64
+                    type: integer
+                  number:
+                    description: A unique, identifying string that appears on emails
+                      sent to the customer for this invoice. This starts with the
+                      customer's unique invoice_prefix if it is specified.
+                    type: string
+                  object:
+                    description: String representing the object's type. Objects of
+                      the same type share the same value.
+                    type: string
+                  onBehalfOf:
+                    description: The account (if any) for which the funds of the invoice
+                      payment are intended. If set, the invoice will be presented
+                      with the branding and support information of the specified account.
+                      See the [Invoices with Connect](https://docs.stripe.com/billing/invoices/connect)
+                      documentation for details.
+                    type: string
+                  parent:
+                    description: The parent that generated this invoice
+                    x-kubernetes-preserve-unknown-fields: true
+                  paymentSettings:
+                    x-kubernetes-preserve-unknown-fields: true
+                  payments:
+                    description: Payments for this invoice. Use [invoice payment](/api/invoice-payment)
+                      to get more details.
+                    x-kubernetes-preserve-unknown-fields: true
+                  periodEnd:
+                    description: The latest timestamp at which invoice items can be
+                      associated with this invoice. Use the [line item period](/api/invoices/line_item#invoice_line_item_object-period)
+                      to get the service period for each price.
+                    format: int64
+                    type: integer
+                  periodStart:
+                    description: The earliest timestamp at which invoice items can
+                      be associated with this invoice. Use the [line item period](/api/invoices/line_item#invoice_line_item_object-period)
+                      to get the service period for each price.
+                    format: int64
+                    type: integer
+                  postPaymentCreditNotesAmount:
+                    description: Total amount of all post-payment credit notes issued
+                      for this invoice.
+                    format: int64
+                    type: integer
+                  prePaymentCreditNotesAmount:
+                    description: Total amount of all pre-payment credit notes issued
+                      for this invoice.
+                    format: int64
+                    type: integer
+                  receiptNumber:
+                    description: This is the transaction number that appears on email
+                      receipts sent for this invoice.
+                    type: string
+                  rendering:
+                    description: The rendering-related settings that control how invoices
+                      render in customer-facing interfaces such as the PDF or hosted
+                      invoice page.
+                    x-kubernetes-preserve-unknown-fields: true
+                  shippingCost:
+                    description: The details of the cost of shipping, including the
+                      ShippingRate applied on the invoice.
+                    x-kubernetes-preserve-unknown-fields: true
+                  shippingDetails:
+                    description: Shipping details for the invoice. The Invoice PDF
+                      will use the `shipping_details` value if it is set, otherwise
+                      the PDF will render the shipping address from the customer.
+                    x-kubernetes-preserve-unknown-fields: true
+                  startingBalance:
+                    description: Starting customer balance before the invoice is finalized.
+                      If the invoice has not been finalized yet, this will be the
+                      current customer balance. For revision invoices, this also includes
+                      any customer balance that was applied to the original invoice.
+                    format: int64
+                    type: integer
+                  statementDescriptor:
+                    description: Extra information about an invoice for the customer's
+                      credit card statement.
+                    type: string
+                  status:
+                    description: The status of the invoice, one of `draft`, `open`,
+                      `paid`, `uncollectible`, or `void`. [Learn more](https://docs.stripe.com/billing/invoices/workflow#workflow-overview)
+                    type: string
+                  statusDetails:
+                    x-kubernetes-preserve-unknown-fields: true
+                  statusTransitions:
+                    x-kubernetes-preserve-unknown-fields: true
+                  subtotal:
+                    description: Total of all subscriptions, invoice items, and prorations
+                      on the invoice before any invoice level discount or exclusive
+                      tax is applied. Item discounts are already incorporated
+                    format: int64
+                    type: integer
+                  subtotalExcludingTax:
+                    description: The integer amount in cents (or local equivalent)
+                      representing the subtotal of the invoice before any invoice
+                      level discount or tax is applied. Item discounts are already
+                      incorporated
+                    format: int64
+                    type: integer
+                  testClock:
+                    description: ID of the test clock this invoice belongs to.
+                    type: string
+                  thresholdReason:
+                    x-kubernetes-preserve-unknown-fields: true
+                  total:
+                    description: Total after discounts and taxes.
+                    format: int64
+                    type: integer
+                  totalDiscountAmounts:
+                    description: The aggregate amounts calculated per discount across
+                      all line items.
+                    x-kubernetes-preserve-unknown-fields: true
+                  totalExcludingTax:
+                    description: The integer amount in cents (or local equivalent)
+                      representing the total amount of the invoice including all discounts
+                      but excluding all tax.
+                    format: int64
+                    type: integer
+                  totalPretaxCreditAmounts:
+                    description: 'Contains pretax credit amounts (ex: discount, credit
+                      grants, etc) that apply to this invoice. This is a combined
+                      list of total_pretax_credit_amounts across all invoice line
+                      items.'
+                    x-kubernetes-preserve-unknown-fields: true
+                  totalTaxes:
+                    description: The aggregate tax information of all line items.
+                    x-kubernetes-preserve-unknown-fields: true
+                  webhooksDeliveredAt:
+                    description: Invoices are automatically paid or sent 1 hour after
+                      webhooks are delivered, or until all webhook delivery attempts
+                      have [been exhausted](https://docs.stripe.com/billing/webhooks#understand).
+                      This field tracks the time when webhooks for this invoice were
+                      successfully delivered. If the invoice had no webhooks to deliver,
+                      this will be set while the invoice is being created.
+                    format: int64
+                    type: integer
+                type: object
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        LastTransitionTime is the last time this condition transitioned from one
+                        status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        A Message containing details about this condition's last transition from
+                        one status to another, if any.
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        ObservedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      type: integer
+                    reason:
+                      description: A Reason for this condition's last transition from
+                        one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
+                      type: string
+                    type:
+                      description: |-
+                        Type of this condition. At most one of each condition type may apply to
+                        a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+              lastHandledReconcileAt:
+                description: |-
+                  LastHandledReconcileAt holds the value of the most recent
+                  reconcile-requested-at annotation token that the controller has
+                  processed. Users can compare this to the annotation to determine
+                  whether a reconcile request has been handled.
+                type: string
+              observedGeneration:
+                description: |-
+                  ObservedGeneration is the latest metadata.generation
+                  which resulted in either a ready state, or stalled due to error
+                  it can not recover from without human intervention.
+                format: int64
+                type: integer
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

@@ -1,0 +1,1865 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.20.1
+  name: setupintents.core.stripe.m.clifton.quest
+spec:
+  group: core.stripe.m.clifton.quest
+  names:
+    categories:
+    - crossplane
+    - managed
+    - stripe
+    kind: SetupIntent
+    listKind: SetupIntentList
+    plural: setupintents
+    singular: setupintent
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
+      type: string
+    - jsonPath: .metadata.annotations.crossplane\.io/external-name
+      name: EXTERNAL-NAME
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          A SetupIntent guides you through the process of setting up and saving a customer's payment credentials for future payments.
+          For example, you can use a SetupIntent to set up and save your customer's card without immediately collecting a payment.
+          Later, you can use [PaymentIntents](https://docs.stripe.com/api#payment_intents) to drive the payment flow.
+
+          Create a SetupIntent when you're ready to collect your customer's payment credentials.
+          Don't maintain long-lived, unconfirmed SetupIntents because they might not be valid.
+          The SetupIntent transitions through multiple [statuses](https://docs.stripe.com/payments/intents#intent-statuses) as it guides
+          you through the setup process.
+
+          Successful SetupIntents result in payment credentials that are optimized for future payments.
+          For example, cardholders in [certain regions](https://stripe.com/guides/strong-customer-authentication) might need to be run through
+          [Strong Customer Authentication](https://docs.stripe.com/strong-customer-authentication) during payment method collection
+          to streamline later [off-session payments](https://docs.stripe.com/payments/setup-intents).
+          If you use the SetupIntent with a [Customer](https://docs.stripe.com/api#setup_intent_object-customer),
+          it automatically attaches the resulting payment method to that Customer after successful setup.
+          We recommend using SetupIntents or [setup_future_usage](https://docs.stripe.com/api#payment_intent_object-setup_future_usage) on
+          PaymentIntents to save payment methods to prevent saving invalid or unoptimized payment methods.
+
+          By using SetupIntents, you can reduce friction for your customers, even as regulations change over time.
+
+          Related guide: [Setup Intents API](https://docs.stripe.com/payments/setup-intents)
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              forProvider:
+                properties:
+                  allowedPaymentMethodTypes:
+                    description: The list of payment method types to allow for this
+                      SetupIntent. Stripe will only use methods in this list when
+                      determining the payment methods to offer. A list of valid payment
+                      method types can be found [here](https://docs.stripe.com/api/payment_methods/object#payment_method_object-type).
+                    items:
+                      enum:
+                      - acss_debit
+                      - affirm
+                      - afterpay_clearpay
+                      - alipay
+                      - alma
+                      - amazon_pay
+                      - au_becs_debit
+                      - bacs_debit
+                      - bancontact
+                      - billie
+                      - bizum
+                      - blik
+                      - boku_promptpay
+                      - boleto
+                      - capchase_pay
+                      - card
+                      - card_present
+                      - cashapp
+                      - check_scan
+                      - click_to_pay
+                      - crypto
+                      - customer_balance
+                      - demo_pay
+                      - duitnow
+                      - dummy_auth_push
+                      - dummy_passthrough_card
+                      - edenred
+                      - eps
+                      - fpx
+                      - gcash
+                      - getbalance
+                      - gift_card
+                      - giropay
+                      - gopay
+                      - grabpay
+                      - id_bank_transfer
+                      - ideal
+                      - interac_present
+                      - kakao_pay
+                      - klarna
+                      - knet
+                      - konbini
+                      - kr_card
+                      - kr_market
+                      - kriya
+                      - link
+                      - mb_way
+                      - mobilepay
+                      - momo
+                      - mondu
+                      - multibanco
+                      - naver_pay
+                      - netbanking
+                      - ng_bank
+                      - ng_bank_transfer
+                      - ng_card
+                      - ng_market
+                      - ng_ussd
+                      - ng_wallet
+                      - nz_bank_account
+                      - octopus
+                      - oxxo
+                      - p24
+                      - paper_check
+                      - pay_by_bank
+                      - payco
+                      - paynow
+                      - paypal
+                      - paypay
+                      - payto
+                      - pix
+                      - promptpay
+                      - qris
+                      - rechnung
+                      - revolut_pay
+                      - samsung_pay
+                      - satispay
+                      - scalapay
+                      - sepa_debit
+                      - sequra
+                      - shop_pay
+                      - shopeepay
+                      - sofort
+                      - south_korea_market
+                      - stripe_balance
+                      - sunbit
+                      - swish
+                      - tamara
+                      - test_pay
+                      - touch_n_go
+                      - truemoney
+                      - twint
+                      - upi
+                      - us_bank_account
+                      - us_cash_voucher
+                      - vipps
+                      - wechat_pay
+                      - wero
+                      - zip
+                      type: string
+                    type: array
+                  attachToSelf:
+                    description: |-
+                      If present, the SetupIntent's payment method will be attached to the in-context Stripe Account.
+
+                      It can only be used for this Stripe Account’s own money movement flows like InboundTransfer and OutboundTransfers. It cannot be set to true when setting up a PaymentMethod for a Customer, and defaults to false when attaching a PaymentMethod to a Customer.
+                    type: boolean
+                  automaticPaymentMethods:
+                    description: When you enable this parameter, this SetupIntent
+                      accepts payment methods that you enable in the Dashboard and
+                      that are compatible with its other parameters.
+                    properties:
+                      allowRedirects:
+                        enum:
+                        - always
+                        - never
+                        type: string
+                      enabled:
+                        type: boolean
+                    required:
+                    - enabled
+                    type: object
+                    x-kubernetes-validations:
+                    - message: automaticPaymentMethods is immutable
+                      rule: self == oldSelf
+                  confirm:
+                    description: Set to `true` to attempt to confirm this SetupIntent
+                      immediately. This parameter defaults to `false`. If a card is
+                      the attached payment method, you can provide a `return_url`
+                      in case further authentication is necessary.
+                    type: boolean
+                    x-kubernetes-validations:
+                    - message: confirm is immutable
+                      rule: self == oldSelf
+                  confirmationToken:
+                    description: |-
+                      ID of the ConfirmationToken used to confirm this SetupIntent.
+
+                      If the provided ConfirmationToken contains properties that are also being provided in this request, such as `payment_method`, then the values in this request will take precedence.
+                    type: string
+                    x-kubernetes-validations:
+                    - message: confirmationToken is immutable
+                      rule: self == oldSelf
+                  customer:
+                    description: |-
+                      ID of the Customer this SetupIntent belongs to, if one exists.
+
+                      If present, the SetupIntent's payment method will be attached to the Customer on successful setup. Payment methods attached to other Customers cannot be used with this SetupIntent.
+                    type: string
+                  customerAccount:
+                    description: |-
+                      ID of the Account this SetupIntent belongs to, if one exists.
+
+                      If present, the SetupIntent's payment method will be attached to the Account on successful setup. Payment methods attached to other Accounts cannot be used with this SetupIntent.
+                    type: string
+                  customerRef:
+                    description: A NamespacedReference to a named object.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                      namespace:
+                        description: Namespace of the referenced object
+                        type: string
+                      policy:
+                        description: Policies for referencing.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: |-
+                              Resolution specifies whether resolution of this reference is required.
+                              The default is 'Required', which means the reconcile will fail if the
+                              reference cannot be resolved. 'Optional' means this reference will be
+                              a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: |-
+                              Resolve specifies when this reference should be resolved. The default
+                              is 'IfNotPresent', which will attempt to resolve the reference only when
+                              the corresponding field is not present. Use 'Always' to resolve the
+                              reference on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
+                    required:
+                    - name
+                    type: object
+                  customerSelector:
+                    description: NamespacedSelector selects a namespaced object.
+                    properties:
+                      matchControllerRef:
+                        description: |-
+                          MatchControllerRef ensures an object with the same controller reference
+                          as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
+                        type: object
+                      namespace:
+                        description: Namespace for the selector
+                        type: string
+                      policy:
+                        description: Policies for selection.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: |-
+                              Resolution specifies whether resolution of this reference is required.
+                              The default is 'Required', which means the reconcile will fail if the
+                              reference cannot be resolved. 'Optional' means this reference will be
+                              a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: |-
+                              Resolve specifies when this reference should be resolved. The default
+                              is 'IfNotPresent', which will attempt to resolve the reference only when
+                              the corresponding field is not present. Use 'Always' to resolve the
+                              reference on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
+                    type: object
+                  description:
+                    description: An arbitrary string attached to the object. Often
+                      useful for displaying to users.
+                    type: string
+                  excludedPaymentMethodTypes:
+                    description: The list of payment method types to exclude from
+                      use with this SetupIntent.
+                    items:
+                      enum:
+                      - acss_debit
+                      - affirm
+                      - afterpay_clearpay
+                      - alipay
+                      - alma
+                      - amazon_pay
+                      - au_becs_debit
+                      - bacs_debit
+                      - bancontact
+                      - billie
+                      - bizum
+                      - blik
+                      - boleto
+                      - card
+                      - cashapp
+                      - crypto
+                      - customer_balance
+                      - eps
+                      - fpx
+                      - giropay
+                      - grabpay
+                      - ideal
+                      - kakao_pay
+                      - klarna
+                      - konbini
+                      - kr_card
+                      - mb_way
+                      - mobilepay
+                      - multibanco
+                      - naver_pay
+                      - nz_bank_account
+                      - oxxo
+                      - p24
+                      - pay_by_bank
+                      - payco
+                      - paynow
+                      - paypal
+                      - paypay
+                      - payto
+                      - pix
+                      - promptpay
+                      - revolut_pay
+                      - samsung_pay
+                      - satispay
+                      - scalapay
+                      - sepa_debit
+                      - sequra
+                      - sofort
+                      - sunbit
+                      - swish
+                      - twint
+                      - upi
+                      - us_bank_account
+                      - wechat_pay
+                      - zip
+                      type: string
+                    type: array
+                  flowDirections:
+                    description: |-
+                      Indicates the directions of money movement for which this payment method is intended to be used.
+
+                      Include `inbound` if you intend to use the payment method as the origin to pull funds from. Include `outbound` if you intend to use the payment method as the destination to send funds to. You can include both if you intend to use the payment method for both purposes.
+                    items:
+                      enum:
+                      - inbound
+                      - outbound
+                      type: string
+                    type: array
+                  mandateData:
+                    description: This hash contains details about the mandate to create.
+                      This parameter can only be used with [`confirm=true`](https://docs.stripe.com/api/setup_intents/create#create_setup_intent-confirm).
+                    properties:
+                      customerAcceptance:
+                        properties:
+                          acceptedAt:
+                            format: int64
+                            type: integer
+                          online:
+                            properties:
+                              ipAddress:
+                                type: string
+                              userAgent:
+                                type: string
+                            required:
+                            - ipAddress
+                            - userAgent
+                            type: object
+                          type:
+                            enum:
+                            - offline
+                            - online
+                            type: string
+                        required:
+                        - type
+                        type: object
+                    required:
+                    - customerAcceptance
+                    type: object
+                    x-kubernetes-validations:
+                    - message: mandateData is immutable
+                      rule: self == oldSelf
+                  metadata:
+                    additionalProperties:
+                      type: string
+                    description: Set of [key-value pairs](https://docs.stripe.com/api/metadata)
+                      that you can attach to an object. This can be useful for storing
+                      additional information about the object in a structured format.
+                      Individual keys can be unset by posting an empty value to them.
+                      All keys can be unset by posting an empty value to `metadata`.
+                    type: object
+                  onBehalfOf:
+                    description: The Stripe account ID created for this SetupIntent.
+                    type: string
+                    x-kubernetes-validations:
+                    - message: onBehalfOf is immutable
+                      rule: self == oldSelf
+                  onBehalfOfRef:
+                    description: A NamespacedReference to a named object.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                      namespace:
+                        description: Namespace of the referenced object
+                        type: string
+                      policy:
+                        description: Policies for referencing.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: |-
+                              Resolution specifies whether resolution of this reference is required.
+                              The default is 'Required', which means the reconcile will fail if the
+                              reference cannot be resolved. 'Optional' means this reference will be
+                              a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: |-
+                              Resolve specifies when this reference should be resolved. The default
+                              is 'IfNotPresent', which will attempt to resolve the reference only when
+                              the corresponding field is not present. Use 'Always' to resolve the
+                              reference on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
+                    required:
+                    - name
+                    type: object
+                  onBehalfOfSelector:
+                    description: NamespacedSelector selects a namespaced object.
+                    properties:
+                      matchControllerRef:
+                        description: |-
+                          MatchControllerRef ensures an object with the same controller reference
+                          as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
+                        type: object
+                      namespace:
+                        description: Namespace for the selector
+                        type: string
+                      policy:
+                        description: Policies for selection.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: |-
+                              Resolution specifies whether resolution of this reference is required.
+                              The default is 'Required', which means the reconcile will fail if the
+                              reference cannot be resolved. 'Optional' means this reference will be
+                              a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: |-
+                              Resolve specifies when this reference should be resolved. The default
+                              is 'IfNotPresent', which will attempt to resolve the reference only when
+                              the corresponding field is not present. Use 'Always' to resolve the
+                              reference on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
+                    type: object
+                  paymentMethod:
+                    description: ID of the payment method (a PaymentMethod, Card,
+                      or saved Source object) to attach to this SetupIntent.
+                    type: string
+                  paymentMethodConfiguration:
+                    description: The ID of the [payment method configuration](https://docs.stripe.com/api/payment_method_configurations)
+                      to use with this SetupIntent.
+                    type: string
+                  paymentMethodConfigurationRef:
+                    description: A NamespacedReference to a named object.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                      namespace:
+                        description: Namespace of the referenced object
+                        type: string
+                      policy:
+                        description: Policies for referencing.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: |-
+                              Resolution specifies whether resolution of this reference is required.
+                              The default is 'Required', which means the reconcile will fail if the
+                              reference cannot be resolved. 'Optional' means this reference will be
+                              a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: |-
+                              Resolve specifies when this reference should be resolved. The default
+                              is 'IfNotPresent', which will attempt to resolve the reference only when
+                              the corresponding field is not present. Use 'Always' to resolve the
+                              reference on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
+                    required:
+                    - name
+                    type: object
+                  paymentMethodConfigurationSelector:
+                    description: NamespacedSelector selects a namespaced object.
+                    properties:
+                      matchControllerRef:
+                        description: |-
+                          MatchControllerRef ensures an object with the same controller reference
+                          as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
+                        type: object
+                      namespace:
+                        description: Namespace for the selector
+                        type: string
+                      policy:
+                        description: Policies for selection.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: |-
+                              Resolution specifies whether resolution of this reference is required.
+                              The default is 'Required', which means the reconcile will fail if the
+                              reference cannot be resolved. 'Optional' means this reference will be
+                              a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: |-
+                              Resolve specifies when this reference should be resolved. The default
+                              is 'IfNotPresent', which will attempt to resolve the reference only when
+                              the corresponding field is not present. Use 'Always' to resolve the
+                              reference on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
+                    type: object
+                  paymentMethodData:
+                    description: |-
+                      When included, this hash creates a PaymentMethod that is set as the [`payment_method`](https://docs.stripe.com/api/setup_intents/object#setup_intent_object-payment_method)
+                      value in the SetupIntent.
+                    properties:
+                      acssDebit:
+                        properties:
+                          accountNumber:
+                            type: string
+                          institutionNumber:
+                            type: string
+                          transitNumber:
+                            type: string
+                        required:
+                        - accountNumber
+                        - institutionNumber
+                        - transitNumber
+                        type: object
+                      allowRedisplay:
+                        enum:
+                        - always
+                        - limited
+                        - unspecified
+                        type: string
+                      auBecsDebit:
+                        properties:
+                          accountNumber:
+                            type: string
+                          bsbNumber:
+                            type: string
+                        required:
+                        - accountNumber
+                        - bsbNumber
+                        type: object
+                      bacsDebit:
+                        properties:
+                          accountNumber:
+                            type: string
+                          sortCode:
+                            type: string
+                        type: object
+                      billingDetails:
+                        properties:
+                          address:
+                            properties:
+                              city:
+                                type: string
+                              country:
+                                type: string
+                              line1:
+                                type: string
+                              line2:
+                                type: string
+                              postalCode:
+                                type: string
+                              state:
+                                type: string
+                            type: object
+                          email:
+                            type: string
+                          name:
+                            type: string
+                          phone:
+                            type: string
+                          taxId:
+                            type: string
+                        type: object
+                      boleto:
+                        properties:
+                          taxId:
+                            type: string
+                        required:
+                        - taxId
+                        type: object
+                      eps:
+                        properties:
+                          bank:
+                            enum:
+                            - arzte_und_apotheker_bank
+                            - austrian_anadi_bank_ag
+                            - bank_austria
+                            - bankhaus_carl_spangler
+                            - bankhaus_schelhammer_und_schattera_ag
+                            - bawag_psk_ag
+                            - bks_bank_ag
+                            - brull_kallmus_bank_ag
+                            - btv_vier_lander_bank
+                            - capital_bank_grawe_gruppe_ag
+                            - deutsche_bank_ag
+                            - dolomitenbank
+                            - easybank_ag
+                            - erste_bank_und_sparkassen
+                            - hypo_alpeadriabank_international_ag
+                            - hypo_bank_burgenland_aktiengesellschaft
+                            - hypo_noe_lb_fur_niederosterreich_u_wien
+                            - hypo_oberosterreich_salzburg_steiermark
+                            - hypo_tirol_bank_ag
+                            - hypo_vorarlberg_bank_ag
+                            - marchfelder_bank
+                            - oberbank_ag
+                            - raiffeisen_bankengruppe_osterreich
+                            - schoellerbank_ag
+                            - sparda_bank_wien
+                            - volksbank_gruppe
+                            - volkskreditbank_ag
+                            - vr_bank_braunau
+                            type: string
+                        type: object
+                      fpx:
+                        properties:
+                          bank:
+                            enum:
+                            - affin_bank
+                            - agrobank
+                            - alliance_bank
+                            - ambank
+                            - bank_islam
+                            - bank_muamalat
+                            - bank_of_china
+                            - bank_rakyat
+                            - bnp_paribas
+                            - bsn
+                            - cimb
+                            - citibank
+                            - deutsche_bank
+                            - hong_leong_bank
+                            - hsbc
+                            - kfh
+                            - maybank2e
+                            - maybank2u
+                            - mbsb_bank
+                            - ocbc
+                            - pb_enterprise
+                            - public_bank
+                            - rhb
+                            - standard_chartered
+                            - uob
+                            type: string
+                        required:
+                        - bank
+                        type: object
+                      ideal:
+                        properties:
+                          bank:
+                            enum:
+                            - abn_amro
+                            - adyen
+                            - asn_bank
+                            - bunq
+                            - buut
+                            - finom
+                            - handelsbanken
+                            - ing
+                            - knab
+                            - mollie
+                            - moneyou
+                            - n26
+                            - nn
+                            - rabobank
+                            - regiobank
+                            - revolut
+                            - sns_bank
+                            - triodos_bank
+                            - van_lanschot
+                            - yoursafe
+                            type: string
+                        type: object
+                      klarna:
+                        properties:
+                          dob:
+                            properties:
+                              day:
+                                format: int64
+                                type: integer
+                              month:
+                                format: int64
+                                type: integer
+                              year:
+                                format: int64
+                                type: integer
+                            required:
+                            - day
+                            - month
+                            - year
+                            type: object
+                        type: object
+                      metadata:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      naverPay:
+                        properties:
+                          funding:
+                            enum:
+                            - card
+                            - points
+                            type: string
+                        type: object
+                      nzBankAccount:
+                        properties:
+                          accountHolderName:
+                            type: string
+                          accountNumber:
+                            type: string
+                          bankCode:
+                            type: string
+                          branchCode:
+                            type: string
+                          reference:
+                            type: string
+                          suffix:
+                            type: string
+                        required:
+                        - accountNumber
+                        - bankCode
+                        - branchCode
+                        - suffix
+                        type: object
+                      p24:
+                        properties:
+                          bank:
+                            enum:
+                            - alior_bank
+                            - bank_millennium
+                            - bank_nowy_bfg_sa
+                            - bank_pekao_sa
+                            - banki_spbdzielcze
+                            - blik
+                            - bnp_paribas
+                            - boz
+                            - citi_handlowy
+                            - credit_agricole
+                            - envelobank
+                            - etransfer_pocztowy24
+                            - getin_bank
+                            - ideabank
+                            - ing
+                            - inteligo
+                            - mbank_mtransfer
+                            - nest_przelew
+                            - noble_pay
+                            - pbac_z_ipko
+                            - plus_bank
+                            - santander_przelew24
+                            - tmobile_usbugi_bankowe
+                            - toyota_bank
+                            - velobank
+                            - volkswagen_bank
+                            type: string
+                        type: object
+                      payto:
+                        properties:
+                          accountNumber:
+                            type: string
+                          bsbNumber:
+                            type: string
+                          payId:
+                            type: string
+                        type: object
+                      radarOptions:
+                        properties:
+                          session:
+                            type: string
+                        type: object
+                      sepaDebit:
+                        properties:
+                          iban:
+                            type: string
+                        required:
+                        - iban
+                        type: object
+                      sofort:
+                        properties:
+                          country:
+                            enum:
+                            - AT
+                            - BE
+                            - DE
+                            - ES
+                            - IT
+                            - NL
+                            type: string
+                        required:
+                        - country
+                        type: object
+                      type:
+                        enum:
+                        - acss_debit
+                        - affirm
+                        - afterpay_clearpay
+                        - alipay
+                        - alma
+                        - amazon_pay
+                        - au_becs_debit
+                        - bacs_debit
+                        - bancontact
+                        - billie
+                        - bizum
+                        - blik
+                        - boleto
+                        - cashapp
+                        - crypto
+                        - customer_balance
+                        - eps
+                        - fpx
+                        - giropay
+                        - grabpay
+                        - ideal
+                        - kakao_pay
+                        - klarna
+                        - konbini
+                        - kr_card
+                        - link
+                        - mb_way
+                        - mobilepay
+                        - multibanco
+                        - naver_pay
+                        - nz_bank_account
+                        - oxxo
+                        - p24
+                        - pay_by_bank
+                        - payco
+                        - paynow
+                        - paypal
+                        - paypay
+                        - payto
+                        - pix
+                        - promptpay
+                        - revolut_pay
+                        - samsung_pay
+                        - satispay
+                        - scalapay
+                        - sepa_debit
+                        - sequra
+                        - sofort
+                        - sunbit
+                        - swish
+                        - twint
+                        - upi
+                        - us_bank_account
+                        - wechat_pay
+                        - zip
+                        type: string
+                      upi:
+                        properties:
+                          mandateOptions:
+                            properties:
+                              amount:
+                                format: int64
+                                type: integer
+                              amountType:
+                                enum:
+                                - fixed
+                                - maximum
+                                type: string
+                              description:
+                                type: string
+                              endDate:
+                                format: int64
+                                type: integer
+                            type: object
+                        type: object
+                      usBankAccount:
+                        properties:
+                          accountHolderType:
+                            enum:
+                            - company
+                            - individual
+                            type: string
+                          accountNumber:
+                            type: string
+                          accountType:
+                            enum:
+                            - checking
+                            - savings
+                            type: string
+                          financialConnectionsAccount:
+                            type: string
+                          routingNumber:
+                            type: string
+                        type: object
+                    required:
+                    - type
+                    type: object
+                  paymentMethodOptions:
+                    description: Payment method-specific configuration for this SetupIntent.
+                    properties:
+                      acssDebit:
+                        properties:
+                          currency:
+                            enum:
+                            - cad
+                            - usd
+                            type: string
+                          mandateOptions:
+                            properties:
+                              customMandateUrl:
+                                type: string
+                              defaultFor:
+                                items:
+                                  enum:
+                                  - invoice
+                                  - subscription
+                                  type: string
+                                type: array
+                              intervalDescription:
+                                type: string
+                              paymentSchedule:
+                                enum:
+                                - combined
+                                - interval
+                                - sporadic
+                                type: string
+                              transactionType:
+                                enum:
+                                - business
+                                - personal
+                                type: string
+                            type: object
+                          verificationMethod:
+                            enum:
+                            - automatic
+                            - instant
+                            - microdeposits
+                            type: string
+                        type: object
+                      bacsDebit:
+                        properties:
+                          mandateOptions:
+                            properties:
+                              referencePrefix:
+                                type: string
+                            type: object
+                        type: object
+                      blik:
+                        properties:
+                          code:
+                            type: string
+                          mandateOptions:
+                            properties:
+                              expiresAt:
+                                format: int64
+                                type: integer
+                            type: object
+                        type: object
+                      card:
+                        properties:
+                          mandateOptions:
+                            properties:
+                              amount:
+                                format: int64
+                                type: integer
+                              amountType:
+                                enum:
+                                - fixed
+                                - maximum
+                                type: string
+                              currency:
+                                type: string
+                              description:
+                                type: string
+                              endDate:
+                                format: int64
+                                type: integer
+                              interval:
+                                enum:
+                                - day
+                                - month
+                                - sporadic
+                                - week
+                                - year
+                                type: string
+                              intervalCount:
+                                format: int64
+                                type: integer
+                              reference:
+                                type: string
+                              startDate:
+                                format: int64
+                                type: integer
+                              supportedTypes:
+                                items:
+                                  enum:
+                                  - india
+                                  type: string
+                                type: array
+                            required:
+                            - amount
+                            - amountType
+                            - currency
+                            - interval
+                            - reference
+                            - startDate
+                            type: object
+                          network:
+                            enum:
+                            - amex
+                            - cartes_bancaires
+                            - diners
+                            - discover
+                            - eftpos_au
+                            - girocard
+                            - interac
+                            - jcb
+                            - link
+                            - mastercard
+                            - unionpay
+                            - unknown
+                            - visa
+                            type: string
+                          requestThreeDSecure:
+                            enum:
+                            - any
+                            - automatic
+                            - challenge
+                            type: string
+                          threeDSecure:
+                            properties:
+                              aresTransStatus:
+                                enum:
+                                - A
+                                - C
+                                - I
+                                - "N"
+                                - R
+                                - U
+                                - "Y"
+                                type: string
+                              cryptogram:
+                                type: string
+                              electronicCommerceIndicator:
+                                enum:
+                                - "01"
+                                - "02"
+                                - "05"
+                                - "06"
+                                - "07"
+                                type: string
+                              networkOptions:
+                                properties:
+                                  cartesBancaires:
+                                    properties:
+                                      cbAvalgo:
+                                        enum:
+                                        - "0"
+                                        - "1"
+                                        - "2"
+                                        - "3"
+                                        - "4"
+                                        - A
+                                        type: string
+                                      cbExemption:
+                                        type: string
+                                      cbScore:
+                                        format: int64
+                                        type: integer
+                                    required:
+                                    - cbAvalgo
+                                    type: object
+                                type: object
+                              requestorChallengeIndicator:
+                                type: string
+                              transactionId:
+                                type: string
+                              version:
+                                enum:
+                                - 1.0.2
+                                - 2.1.0
+                                - 2.2.0
+                                - 2.3.0
+                                - 2.3.1
+                                type: string
+                            type: object
+                        type: object
+                      klarna:
+                        properties:
+                          currency:
+                            type: string
+                          onDemand:
+                            properties:
+                              averageAmount:
+                                format: int64
+                                type: integer
+                              maximumAmount:
+                                format: int64
+                                type: integer
+                              minimumAmount:
+                                format: int64
+                                type: integer
+                              purchaseInterval:
+                                enum:
+                                - day
+                                - month
+                                - week
+                                - year
+                                type: string
+                              purchaseIntervalCount:
+                                format: int64
+                                type: integer
+                            type: object
+                          preferredLocale:
+                            enum:
+                            - cs-CZ
+                            - da-DK
+                            - de-AT
+                            - de-CH
+                            - de-DE
+                            - el-GR
+                            - en-AT
+                            - en-AU
+                            - en-BE
+                            - en-CA
+                            - en-CH
+                            - en-CZ
+                            - en-DE
+                            - en-DK
+                            - en-ES
+                            - en-FI
+                            - en-FR
+                            - en-GB
+                            - en-GR
+                            - en-IE
+                            - en-IT
+                            - en-NL
+                            - en-NO
+                            - en-NZ
+                            - en-PL
+                            - en-PT
+                            - en-RO
+                            - en-SE
+                            - en-US
+                            - es-ES
+                            - es-US
+                            - fi-FI
+                            - fr-BE
+                            - fr-CA
+                            - fr-CH
+                            - fr-FR
+                            - it-CH
+                            - it-IT
+                            - nb-NO
+                            - nl-BE
+                            - nl-NL
+                            - pl-PL
+                            - pt-PT
+                            - ro-RO
+                            - sv-FI
+                            - sv-SE
+                            type: string
+                          subscriptions:
+                            items:
+                              properties:
+                                interval:
+                                  enum:
+                                  - day
+                                  - month
+                                  - week
+                                  - year
+                                  type: string
+                                intervalCount:
+                                  format: int64
+                                  type: integer
+                                name:
+                                  type: string
+                                nextBilling:
+                                  properties:
+                                    amount:
+                                      format: int64
+                                      type: integer
+                                    date:
+                                      type: string
+                                  required:
+                                  - amount
+                                  - date
+                                  type: object
+                                reference:
+                                  type: string
+                              required:
+                              - interval
+                              - nextBilling
+                              - reference
+                              type: object
+                            type: array
+                        type: object
+                      paypal:
+                        properties:
+                          billingAgreementId:
+                            type: string
+                        type: object
+                      payto:
+                        properties:
+                          mandateOptions:
+                            properties:
+                              amount:
+                                format: int64
+                                type: integer
+                              amountType:
+                                enum:
+                                - ""
+                                - fixed
+                                - maximum
+                                type: string
+                              endDate:
+                                type: string
+                              paymentSchedule:
+                                enum:
+                                - ""
+                                - adhoc
+                                - annual
+                                - daily
+                                - fortnightly
+                                - monthly
+                                - quarterly
+                                - semi_annual
+                                - weekly
+                                type: string
+                              paymentsPerPeriod:
+                                format: int64
+                                type: integer
+                              purpose:
+                                enum:
+                                - ""
+                                - dependant_support
+                                - government
+                                - loan
+                                - mortgage
+                                - other
+                                - pension
+                                - personal
+                                - retail
+                                - salary
+                                - tax
+                                - utility
+                                type: string
+                              startDate:
+                                type: string
+                            type: object
+                        type: object
+                      pix:
+                        properties:
+                          mandateOptions:
+                            properties:
+                              amount:
+                                format: int64
+                                type: integer
+                              amountIncludesIof:
+                                enum:
+                                - always
+                                - never
+                                type: string
+                              amountType:
+                                enum:
+                                - fixed
+                                - maximum
+                                type: string
+                              currency:
+                                type: string
+                              endDate:
+                                type: string
+                              paymentSchedule:
+                                enum:
+                                - halfyearly
+                                - monthly
+                                - quarterly
+                                - weekly
+                                - yearly
+                                type: string
+                              reference:
+                                type: string
+                              startDate:
+                                type: string
+                            type: object
+                        type: object
+                      sepaDebit:
+                        properties:
+                          mandateOptions:
+                            properties:
+                              referencePrefix:
+                                type: string
+                            type: object
+                        type: object
+                      upi:
+                        properties:
+                          mandateOptions:
+                            properties:
+                              amount:
+                                format: int64
+                                type: integer
+                              amountType:
+                                enum:
+                                - fixed
+                                - maximum
+                                type: string
+                              description:
+                                type: string
+                              endDate:
+                                format: int64
+                                type: integer
+                            type: object
+                          setupFutureUsage:
+                            enum:
+                            - ""
+                            - none
+                            - off_session
+                            - on_session
+                            type: string
+                        type: object
+                      usBankAccount:
+                        properties:
+                          financialConnections:
+                            properties:
+                              filters:
+                                properties:
+                                  accountSubcategories:
+                                    items:
+                                      enum:
+                                      - checking
+                                      - savings
+                                      type: string
+                                    type: array
+                                type: object
+                              permissions:
+                                items:
+                                  enum:
+                                  - balances
+                                  - ownership
+                                  - payment_method
+                                  - transactions
+                                  type: string
+                                type: array
+                              prefetch:
+                                items:
+                                  enum:
+                                  - balances
+                                  - ownership
+                                  - transactions
+                                  type: string
+                                type: array
+                              returnUrl:
+                                type: string
+                            type: object
+                          mandateOptions:
+                            properties:
+                              collectionMethod:
+                                enum:
+                                - ""
+                                - paper
+                                type: string
+                            type: object
+                          networks:
+                            properties:
+                              requested:
+                                items:
+                                  enum:
+                                  - ach
+                                  - us_domestic_wire
+                                  type: string
+                                type: array
+                            type: object
+                          verificationMethod:
+                            enum:
+                            - automatic
+                            - instant
+                            - microdeposits
+                            type: string
+                        type: object
+                    type: object
+                  paymentMethodRef:
+                    description: A NamespacedReference to a named object.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                      namespace:
+                        description: Namespace of the referenced object
+                        type: string
+                      policy:
+                        description: Policies for referencing.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: |-
+                              Resolution specifies whether resolution of this reference is required.
+                              The default is 'Required', which means the reconcile will fail if the
+                              reference cannot be resolved. 'Optional' means this reference will be
+                              a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: |-
+                              Resolve specifies when this reference should be resolved. The default
+                              is 'IfNotPresent', which will attempt to resolve the reference only when
+                              the corresponding field is not present. Use 'Always' to resolve the
+                              reference on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
+                    required:
+                    - name
+                    type: object
+                  paymentMethodSelector:
+                    description: NamespacedSelector selects a namespaced object.
+                    properties:
+                      matchControllerRef:
+                        description: |-
+                          MatchControllerRef ensures an object with the same controller reference
+                          as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
+                        type: object
+                      namespace:
+                        description: Namespace for the selector
+                        type: string
+                      policy:
+                        description: Policies for selection.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: |-
+                              Resolution specifies whether resolution of this reference is required.
+                              The default is 'Required', which means the reconcile will fail if the
+                              reference cannot be resolved. 'Optional' means this reference will be
+                              a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: |-
+                              Resolve specifies when this reference should be resolved. The default
+                              is 'IfNotPresent', which will attempt to resolve the reference only when
+                              the corresponding field is not present. Use 'Always' to resolve the
+                              reference on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
+                    type: object
+                  returnUrl:
+                    description: The URL to redirect your customer back to after they
+                      authenticate or cancel their payment on the payment method's
+                      app or site. To redirect to a mobile application, you can alternatively
+                      supply an application URI scheme. This parameter can only be
+                      used with [`confirm=true`](https://docs.stripe.com/api/setup_intents/create#create_setup_intent-confirm).
+                    type: string
+                    x-kubernetes-validations:
+                    - message: returnUrl is immutable
+                      rule: self == oldSelf
+                  singleUse:
+                    description: |-
+                      If you populate this hash, this SetupIntent generates a `single_use` mandate after successful completion.
+
+                      Single-use mandates are only valid for the following payment methods: `acss_debit`, `alipay`, `au_becs_debit`, `bacs_debit`, `bancontact`, `boleto`, `ideal`, `link`, `sepa_debit`, and `us_bank_account`.
+                    properties:
+                      amount:
+                        format: int64
+                        type: integer
+                      currency:
+                        type: string
+                    required:
+                    - amount
+                    - currency
+                    type: object
+                    x-kubernetes-validations:
+                    - message: singleUse is immutable
+                      rule: self == oldSelf
+                  usage:
+                    description: Indicates how the payment method is intended to be
+                      used in the future. If not provided, this value defaults to
+                      `off_session`.
+                    enum:
+                    - off_session
+                    - on_session
+                    type: string
+                    x-kubernetes-validations:
+                    - message: usage is immutable
+                      rule: self == oldSelf
+                  useStripeSdk:
+                    description: Set to `true` when confirming server-side and using
+                      Stripe.js, iOS, or Android client-side SDKs to handle the next
+                      actions.
+                    type: boolean
+                    x-kubernetes-validations:
+                    - message: useStripeSdk is immutable
+                      rule: self == oldSelf
+                type: object
+              managementPolicies:
+                default:
+                - '*'
+                description: |-
+                  THIS IS A BETA FIELD. It is on by default but can be opted out
+                  through a Crossplane feature flag.
+                  ManagementPolicies specify the array of actions Crossplane is allowed to
+                  take on the managed and external resources.
+                  See the design doc for more information: https://github.com/crossplane/crossplane/blob/499895a25d1a1a0ba1604944ef98ac7a1a71f197/design/design-doc-observe-only-resources.md?plain=1#L223
+                  and this one: https://github.com/crossplane/crossplane/blob/444267e84783136daa93568b364a5f01228cacbe/design/one-pager-ignore-changes.md
+                items:
+                  description: |-
+                    A ManagementAction represents an action that the Crossplane controllers
+                    can take on an external resource.
+                  enum:
+                  - Observe
+                  - Create
+                  - Update
+                  - Delete
+                  - LateInitialize
+                  - '*'
+                  type: string
+                type: array
+              providerConfigRef:
+                default:
+                  kind: ClusterProviderConfig
+                  name: default
+                description: |-
+                  ProviderConfigReference specifies how the provider that will be used to
+                  create, observe, update, and delete this managed resource should be
+                  configured.
+                properties:
+                  kind:
+                    description: Kind of the referenced object.
+                    type: string
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - kind
+                - name
+                type: object
+              writeConnectionSecretToRef:
+                description: |-
+                  WriteConnectionSecretToReference specifies the namespace and name of a
+                  Secret to which any connection details for this managed resource should
+                  be written. Connection details frequently include the endpoint, username,
+                  and password required to connect to the managed resource.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                required:
+                - name
+                type: object
+            required:
+            - forProvider
+            type: object
+          status:
+            properties:
+              atProvider:
+                properties:
+                  allowedPaymentMethodTypes:
+                    description: The list of payment method types to allow for this
+                      SetupIntent. Stripe will only use methods in this list when
+                      determining the payment methods to offer.
+                    x-kubernetes-preserve-unknown-fields: true
+                  application:
+                    description: ID of the Connect application that created the SetupIntent.
+                    type: string
+                  attachToSelf:
+                    description: |-
+                      If present, the SetupIntent's payment method will be attached to the in-context Stripe Account.
+
+                      It can only be used for this Stripe Account’s own money movement flows like InboundTransfer and OutboundTransfers. It cannot be set to true when setting up a PaymentMethod for a Customer, and defaults to false when attaching a PaymentMethod to a Customer.
+                    type: boolean
+                  automaticPaymentMethods:
+                    description: Settings for dynamic payment methods compatible with
+                      this Setup Intent
+                    x-kubernetes-preserve-unknown-fields: true
+                  cancellationReason:
+                    description: Reason for cancellation of this SetupIntent, one
+                      of `abandoned`, `requested_by_customer`, or `duplicate`.
+                    type: string
+                  created:
+                    description: Time at which the object was created. Measured in
+                      seconds since the Unix epoch.
+                    format: int64
+                    type: integer
+                  customer:
+                    description: |-
+                      ID of the Customer this SetupIntent belongs to, if one exists.
+
+                      If present, the SetupIntent's payment method will be attached to the Customer on successful setup. Payment methods attached to other Customers cannot be used with this SetupIntent.
+                    type: string
+                  customerAccount:
+                    description: |-
+                      ID of the Account this SetupIntent belongs to, if one exists.
+
+                      If present, the SetupIntent's payment method will be attached to the Account on successful setup. Payment methods attached to other Accounts cannot be used with this SetupIntent.
+                    type: string
+                  description:
+                    description: An arbitrary string attached to the object. Often
+                      useful for displaying to users.
+                    type: string
+                  excludedPaymentMethodTypes:
+                    description: Payment method types that are excluded from this
+                      SetupIntent.
+                    x-kubernetes-preserve-unknown-fields: true
+                  flowDirections:
+                    description: |-
+                      Indicates the directions of money movement for which this payment method is intended to be used.
+
+                      Include `inbound` if you intend to use the payment method as the origin to pull funds from. Include `outbound` if you intend to use the payment method as the destination to send funds to. You can include both if you intend to use the payment method for both purposes.
+                    x-kubernetes-preserve-unknown-fields: true
+                  id:
+                    description: Unique identifier for the object.
+                    type: string
+                  lastSetupError:
+                    description: The error encountered in the previous SetupIntent
+                      confirmation.
+                    x-kubernetes-preserve-unknown-fields: true
+                  latestAttempt:
+                    description: The most recent SetupAttempt for this SetupIntent.
+                    type: string
+                  livemode:
+                    description: If the object exists in live mode, the value is `true`.
+                      If the object exists in test mode, the value is `false`.
+                    type: boolean
+                  managedPayments:
+                    x-kubernetes-preserve-unknown-fields: true
+                  mandate:
+                    description: ID of the multi use Mandate generated by the SetupIntent.
+                    type: string
+                  metadata:
+                    additionalProperties:
+                      type: string
+                    description: Set of [key-value pairs](https://docs.stripe.com/api/metadata)
+                      that you can attach to an object. This can be useful for storing
+                      additional information about the object in a structured format.
+                    type: object
+                  nextAction:
+                    description: If present, this property tells you what actions
+                      you need to take in order for your customer to continue payment
+                      setup.
+                    x-kubernetes-preserve-unknown-fields: true
+                  object:
+                    description: String representing the object's type. Objects of
+                      the same type share the same value.
+                    type: string
+                  onBehalfOf:
+                    description: The account (if any) for which the setup is intended.
+                    type: string
+                  paymentMethod:
+                    description: ID of the payment method used with this SetupIntent.
+                      If the payment method is `card_present` and isn't a digital
+                      wallet, then the [generated_card](https://docs.stripe.com/api/setup_attempts/object#setup_attempt_object-payment_method_details-card_present-generated_card)
+                      associated with the `latest_attempt` is attached to the Customer
+                      instead.
+                    type: string
+                  paymentMethodConfigurationDetails:
+                    description: Information about the [payment method configuration](https://docs.stripe.com/api/payment_method_configurations)
+                      used for this Setup Intent.
+                    x-kubernetes-preserve-unknown-fields: true
+                  paymentMethodOptions:
+                    description: Payment method-specific configuration for this SetupIntent.
+                    x-kubernetes-preserve-unknown-fields: true
+                  paymentMethodTypes:
+                    description: The list of payment method types (e.g. card) that
+                      this SetupIntent is allowed to set up. A list of valid payment
+                      method types can be found [here](https://docs.stripe.com/api/payment_methods/object#payment_method_object-type).
+                    x-kubernetes-preserve-unknown-fields: true
+                  singleUseMandate:
+                    description: ID of the single_use Mandate generated by the SetupIntent.
+                    type: string
+                  status:
+                    description: '[Status](https://docs.stripe.com/payments/intents#intent-statuses)
+                      of this SetupIntent, one of `requires_payment_method`, `requires_confirmation`,
+                      `requires_action`, `processing`, `canceled`, or `succeeded`.'
+                    type: string
+                  usage:
+                    description: |-
+                      Indicates how the payment method is intended to be used in the future.
+
+                      Use `on_session` if you intend to only reuse the payment method when the customer is in your checkout flow. Use `off_session` if your customer may or may not be in your checkout flow. If not provided, this value defaults to `off_session`.
+                    type: string
+                type: object
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        LastTransitionTime is the last time this condition transitioned from one
+                        status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        A Message containing details about this condition's last transition from
+                        one status to another, if any.
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        ObservedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      type: integer
+                    reason:
+                      description: A Reason for this condition's last transition from
+                        one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
+                      type: string
+                    type:
+                      description: |-
+                        Type of this condition. At most one of each condition type may apply to
+                        a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+              lastHandledReconcileAt:
+                description: |-
+                  LastHandledReconcileAt holds the value of the most recent
+                  reconcile-requested-at annotation token that the controller has
+                  processed. Users can compare this to the annotation to determine
+                  whether a reconcile request has been handled.
+                type: string
+              observedGeneration:
+                description: |-
+                  ObservedGeneration is the latest metadata.generation
+                  which resulted in either a ready state, or stalled due to error
+                  it can not recover from without human intervention.
+                format: int64
+                type: integer
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

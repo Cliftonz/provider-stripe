@@ -1,0 +1,15 @@
+{
+  "paths": {
+    "/v1/widgets": {
+      "post": {"requestBody": {"content": {"application/x-www-form-urlencoded": {"schema": {
+        "properties": {"name": {"type": "string"}},
+        "type": "object"
+      }}}}}
+    },
+    "/v1/widgets/{id}": {
+      "post": {"requestBody": {"content": {"application/x-www-form-urlencoded": {"schema": {"properties": {"mode": {"description": "untyped"}}, "type": "object"}}}}},
+      "get": {"responses": {"200": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/widget"}}}}}}
+    }
+  },
+  "components": {"schemas": {"widget": {"properties": {"id": {"type": "string"}}, "type": "object"}}}
+}

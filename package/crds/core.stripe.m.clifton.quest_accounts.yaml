@@ -1,0 +1,1453 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.20.1
+  name: accounts.core.stripe.m.clifton.quest
+spec:
+  group: core.stripe.m.clifton.quest
+  names:
+    categories:
+    - crossplane
+    - managed
+    - stripe
+    kind: Account
+    listKind: AccountList
+    plural: accounts
+    singular: account
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
+      type: string
+    - jsonPath: .metadata.annotations.crossplane\.io/external-name
+      name: EXTERNAL-NAME
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          For new integrations, we recommend using the [Accounts v2 API](/api/v2/core/accounts), in place of /v1/accounts and /v1/customers to represent a user.
+
+          This is an object representing a Stripe account. You can retrieve it to see
+          properties on the account like its current requirements or if the account is
+          enabled to make live charges or receive payouts.
+
+          For accounts where [controller.requirement_collection](/api/accounts/object#account_object-controller-requirement_collection)
+          is `application`, which includes Custom accounts, the properties below are always
+          returned.
+
+          For accounts where [controller.requirement_collection](/api/accounts/object#account_object-controller-requirement_collection)
+          is `stripe`, which includes Standard and Express accounts, some properties are only returned
+          until you create an [Account Link](/api/account_links) or [Account Session](/api/account_sessions)
+          to start Connect Onboarding. Learn about the [differences between accounts](/connect/accounts).
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              forProvider:
+                properties:
+                  accountToken:
+                    description: An [account token](https://docs.stripe.com/api#create_account_token),
+                      used to securely provide details to the account.
+                    type: string
+                  bankAccount:
+                    description: Either a token, like the ones returned by [Stripe.js](https://stripe.com/docs/js),
+                      or a dictionary containing a user's bank account details.
+                    x-kubernetes-preserve-unknown-fields: true
+                  businessProfile:
+                    description: Business information about the account.
+                    properties:
+                      annualRevenue:
+                        properties:
+                          amount:
+                            format: int64
+                            type: integer
+                          currency:
+                            type: string
+                          fiscalYearEnd:
+                            type: string
+                        required:
+                        - amount
+                        - currency
+                        - fiscalYearEnd
+                        type: object
+                      estimatedWorkerCount:
+                        format: int64
+                        type: integer
+                      mcc:
+                        type: string
+                      minorityOwnedBusinessDesignation:
+                        items:
+                          enum:
+                          - lgbtqi_owned_business
+                          - minority_owned_business
+                          - none_of_these_apply
+                          - prefer_not_to_answer
+                          - women_owned_business
+                          type: string
+                        type: array
+                      monthlyEstimatedRevenue:
+                        properties:
+                          amount:
+                            format: int64
+                            type: integer
+                          currency:
+                            type: string
+                        required:
+                        - amount
+                        - currency
+                        type: object
+                      name:
+                        type: string
+                      productDescription:
+                        type: string
+                      specifiedCommercialTransactionsActUrl:
+                        type: string
+                      supportAddress:
+                        properties:
+                          city:
+                            type: string
+                          country:
+                            type: string
+                          line1:
+                            type: string
+                          line2:
+                            type: string
+                          postalCode:
+                            type: string
+                          state:
+                            type: string
+                        type: object
+                      supportEmail:
+                        type: string
+                      supportPhone:
+                        type: string
+                      supportUrl:
+                        type: string
+                      url:
+                        type: string
+                    type: object
+                  businessType:
+                    description: The business type. Once you create an [Account Link](/api/account_links)
+                      or [Account Session](/api/account_sessions), this property can
+                      only be updated for accounts where [controller.requirement_collection](/api/accounts/object#account_object-controller-requirement_collection)
+                      is `application`, which includes Custom accounts.
+                    enum:
+                    - company
+                    - government_entity
+                    - individual
+                    - non_profit
+                    type: string
+                  capabilities:
+                    description: |-
+                      Each key of the dictionary represents a capability, and each capability
+                      maps to its settings (for example, whether it has been requested or not). Each
+                      capability is inactive until you have provided its specific
+                      requirements and Stripe has verified them. An account might have some
+                      of its requested capabilities be active and some be inactive.
+
+                      Required when [account.controller.stripe_dashboard.type](/api/accounts/create#create_account-controller-dashboard-type)
+                      is `none`, which includes Custom accounts.
+                    properties:
+                      acssDebitPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      affirmPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      afterpayClearpayPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      almaPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      amazonPayPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      appDistribution:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      auBecsDebitPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      bacsDebitPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      bancontactPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      bankTransferPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      billiePayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      bizumPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      blikPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      blikRecurringPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      boletoPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      cardIssuing:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      cardPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      cartesBancairesPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      cashappPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      cryptoPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      epsPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      fpxPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      gbBankTransferPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      giropayPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      grabpayPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      idealPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      indiaInternationalPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      jcbPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      jpBankTransferPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      kakaoPayPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      klarnaPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      konbiniPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      krCardPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      legacyPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      linkPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      mbWayPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      mobilepayPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      multibancoPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      mxBankTransferPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      naverPayPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      nzBankAccountBecsDebitPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      oxxoPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      p24Payments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      payByBankPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      paycoPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      paynowPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      paypayPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      paytoPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      pixPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      promptpayPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      revolutPayPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      samsungPayPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      satispayPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      scalapayPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      sepaBankTransferPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      sepaDebitPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      sequraPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      sofortPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      sunbitPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      swishPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      taxReportingUs1099K:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      taxReportingUs1099Misc:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      transfers:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      treasury:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      twintPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      upiPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      usBankAccountAchPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      usBankTransferPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                      zipPayments:
+                        properties:
+                          requested:
+                            type: boolean
+                        type: object
+                    type: object
+                  company:
+                    description: Information about the company or business. This field
+                      is available for any `business_type`. Once you create an [Account
+                      Link](/api/account_links) or [Account Session](/api/account_sessions),
+                      this property can only be updated for accounts where [controller.requirement_collection](/api/accounts/object#account_object-controller-requirement_collection)
+                      is `application`, which includes Custom accounts.
+                    properties:
+                      address:
+                        properties:
+                          city:
+                            type: string
+                          country:
+                            type: string
+                          line1:
+                            type: string
+                          line2:
+                            type: string
+                          postalCode:
+                            type: string
+                          state:
+                            type: string
+                        type: object
+                      addressKana:
+                        properties:
+                          city:
+                            type: string
+                          country:
+                            type: string
+                          line1:
+                            type: string
+                          line2:
+                            type: string
+                          postalCode:
+                            type: string
+                          state:
+                            type: string
+                          town:
+                            type: string
+                        type: object
+                      addressKanji:
+                        properties:
+                          city:
+                            type: string
+                          country:
+                            type: string
+                          line1:
+                            type: string
+                          line2:
+                            type: string
+                          postalCode:
+                            type: string
+                          state:
+                            type: string
+                          town:
+                            type: string
+                        type: object
+                      administrativeAddress:
+                        properties:
+                          city:
+                            type: string
+                          country:
+                            type: string
+                          line1:
+                            type: string
+                          line2:
+                            type: string
+                          postalCode:
+                            type: string
+                          state:
+                            type: string
+                        type: object
+                      directorsProvided:
+                        type: boolean
+                      directorshipDeclaration:
+                        properties:
+                          date:
+                            format: int64
+                            type: integer
+                          ip:
+                            type: string
+                          userAgent:
+                            type: string
+                        type: object
+                      executivesProvided:
+                        type: boolean
+                      exportLicenseId:
+                        type: string
+                      exportPurposeCode:
+                        type: string
+                      name:
+                        type: string
+                      nameKana:
+                        type: string
+                      nameKanji:
+                        type: string
+                      ownersProvided:
+                        type: boolean
+                      ownershipDeclaration:
+                        properties:
+                          date:
+                            format: int64
+                            type: integer
+                          ip:
+                            type: string
+                          userAgent:
+                            type: string
+                        type: object
+                      ownershipExemptionReason:
+                        enum:
+                        - ""
+                        - qualified_entity_exceeds_ownership_threshold
+                        - qualifies_as_financial_institution
+                        type: string
+                      phone:
+                        type: string
+                      principalPlaceOfBusiness:
+                        properties:
+                          city:
+                            type: string
+                          country:
+                            type: string
+                          line1:
+                            type: string
+                          line2:
+                            type: string
+                          postalCode:
+                            type: string
+                          state:
+                            type: string
+                        type: object
+                      registrationDate:
+                        properties:
+                          day:
+                            format: int64
+                            type: integer
+                          month:
+                            format: int64
+                            type: integer
+                          year:
+                            format: int64
+                            type: integer
+                        required:
+                        - day
+                        - month
+                        - year
+                        type: object
+                      registrationNumber:
+                        type: string
+                      representativeDeclaration:
+                        properties:
+                          date:
+                            format: int64
+                            type: integer
+                          ip:
+                            type: string
+                          userAgent:
+                            type: string
+                        type: object
+                      structure:
+                        enum:
+                        - ""
+                        - free_zone_establishment
+                        - free_zone_llc
+                        - government_instrumentality
+                        - governmental_unit
+                        - incorporated_non_profit
+                        - incorporated_partnership
+                        - limited_liability_partnership
+                        - llc
+                        - multi_member_llc
+                        - private_company
+                        - private_corporation
+                        - private_partnership
+                        - public_company
+                        - public_corporation
+                        - public_partnership
+                        - registered_charity
+                        - single_member_llc
+                        - sole_establishment
+                        - sole_proprietorship
+                        - tax_exempt_government_instrumentality
+                        - unincorporated_association
+                        - unincorporated_non_profit
+                        - unincorporated_partnership
+                        type: string
+                      taxId:
+                        type: string
+                      taxIdRegistrar:
+                        type: string
+                      vatId:
+                        type: string
+                      verification:
+                        properties:
+                          document:
+                            properties:
+                              back:
+                                type: string
+                              front:
+                                type: string
+                            type: object
+                        type: object
+                    type: object
+                  controller:
+                    description: A hash of configuration describing the account controller's
+                      attributes.
+                    properties:
+                      fees:
+                        properties:
+                          payer:
+                            enum:
+                            - account
+                            - application
+                            type: string
+                        type: object
+                      losses:
+                        properties:
+                          payments:
+                            enum:
+                            - application
+                            - stripe
+                            type: string
+                        type: object
+                      requirementCollection:
+                        enum:
+                        - application
+                        - stripe
+                        type: string
+                      stripeDashboard:
+                        properties:
+                          type:
+                            enum:
+                            - express
+                            - full
+                            - none
+                            type: string
+                        type: object
+                    type: object
+                    x-kubernetes-validations:
+                    - message: controller is immutable
+                      rule: self == oldSelf
+                  country:
+                    description: The country in which the account holder resides,
+                      or in which the business is legally established. This should
+                      be an ISO 3166-1 alpha-2 country code. For example, if you are
+                      in the United States and the business for which you're creating
+                      an account is legally represented in Canada, you would use `CA`
+                      as the country for the account being created. Available countries
+                      include [Stripe's global markets](https://stripe.com/global)
+                      as well as countries where [cross-border payouts](https://stripe.com/docs/connect/cross-border-payouts)
+                      are supported.
+                    type: string
+                    x-kubernetes-validations:
+                    - message: country is immutable
+                      rule: self == oldSelf
+                  defaultCurrency:
+                    description: Three-letter ISO currency code representing the default
+                      currency for the account. This must be a currency that [Stripe
+                      supports in the account's country](https://docs.stripe.com/payouts).
+                    type: string
+                  documents:
+                    description: Documents that may be submitted to satisfy various
+                      informational requests.
+                    properties:
+                      bankAccountOwnershipVerification:
+                        properties:
+                          files:
+                            items:
+                              type: string
+                            type: array
+                        type: object
+                      companyLicense:
+                        properties:
+                          files:
+                            items:
+                              type: string
+                            type: array
+                        type: object
+                      companyMemorandumOfAssociation:
+                        properties:
+                          files:
+                            items:
+                              type: string
+                            type: array
+                        type: object
+                      companyMinisterialDecree:
+                        properties:
+                          files:
+                            items:
+                              type: string
+                            type: array
+                        type: object
+                      companyRegistrationVerification:
+                        properties:
+                          files:
+                            items:
+                              type: string
+                            type: array
+                        type: object
+                      companyTaxIdVerification:
+                        properties:
+                          files:
+                            items:
+                              type: string
+                            type: array
+                        type: object
+                      proofOfAddress:
+                        properties:
+                          files:
+                            items:
+                              type: string
+                            type: array
+                        type: object
+                      proofOfUltimateBeneficialOwnership:
+                        properties:
+                          files:
+                            items:
+                              type: string
+                            type: array
+                          signer:
+                            properties:
+                              person:
+                                type: string
+                            type: object
+                        type: object
+                    type: object
+                  email:
+                    description: The email address of the account holder. This is
+                      only to make the account easier to identify to you. If [controller.requirement_collection](/api/accounts/object#account_object-controller-requirement_collection)
+                      is `application`, which includes Custom accounts, Stripe doesn't
+                      email the account without your consent.
+                    type: string
+                  externalAccount:
+                    description: A card or bank account to attach to the account for
+                      receiving [payouts](/connect/bank-debit-card-payouts) (you won’t
+                      be able to use it for top-ups). You can provide either a token,
+                      like the ones returned by [Stripe.js](/js), or a dictionary,
+                      as documented in the `external_account` parameter for [bank
+                      account](/api#account_create_bank_account) creation. <br><br>By
+                      default, providing an external account sets it as the new default
+                      external account for its currency, and deletes the old default
+                      if one exists. To add additional external accounts without replacing
+                      the existing default for the currency, use the [bank account](/api#account_create_bank_account)
+                      or [card creation](/api#account_create_card) APIs. After you
+                      create an [Account Link](/api/account_links) or [Account Session](/api/account_sessions),
+                      this property can only be updated for accounts where [controller.requirement_collection](/api/accounts/object#account_object-controller-requirement_collection)
+                      is `application`, which includes Custom accounts.
+                    type: string
+                  groups:
+                    description: A hash of account group type to tokens. These are
+                      account groups this account should be added to.
+                    properties:
+                      paymentsPricing:
+                        type: string
+                    type: object
+                  individual:
+                    description: Information about the person represented by the account.
+                      This field is null unless `business_type` is set to `individual`.
+                      Once you create an [Account Link](/api/account_links) or [Account
+                      Session](/api/account_sessions), this property can only be updated
+                      for accounts where [controller.requirement_collection](/api/accounts/object#account_object-controller-requirement_collection)
+                      is `application`, which includes Custom accounts.
+                    properties:
+                      address:
+                        properties:
+                          city:
+                            type: string
+                          country:
+                            type: string
+                          line1:
+                            type: string
+                          line2:
+                            type: string
+                          postalCode:
+                            type: string
+                          state:
+                            type: string
+                        type: object
+                      addressKana:
+                        properties:
+                          city:
+                            type: string
+                          country:
+                            type: string
+                          line1:
+                            type: string
+                          line2:
+                            type: string
+                          postalCode:
+                            type: string
+                          state:
+                            type: string
+                          town:
+                            type: string
+                        type: object
+                      addressKanji:
+                        properties:
+                          city:
+                            type: string
+                          country:
+                            type: string
+                          line1:
+                            type: string
+                          line2:
+                            type: string
+                          postalCode:
+                            type: string
+                          state:
+                            type: string
+                          town:
+                            type: string
+                        type: object
+                      dob:
+                        properties:
+                          day:
+                            format: int64
+                            type: integer
+                          month:
+                            format: int64
+                            type: integer
+                          year:
+                            format: int64
+                            type: integer
+                        required:
+                        - day
+                        - month
+                        - year
+                        type: object
+                      email:
+                        type: string
+                      firstName:
+                        type: string
+                      firstNameKana:
+                        type: string
+                      firstNameKanji:
+                        type: string
+                      fullNameAliases:
+                        items:
+                          type: string
+                        type: array
+                      gender:
+                        type: string
+                      idNumber:
+                        type: string
+                      idNumberSecondary:
+                        type: string
+                      lastName:
+                        type: string
+                      lastNameKana:
+                        type: string
+                      lastNameKanji:
+                        type: string
+                      maidenName:
+                        type: string
+                      metadata:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      phone:
+                        type: string
+                      politicalExposure:
+                        enum:
+                        - existing
+                        - none
+                        type: string
+                      registeredAddress:
+                        properties:
+                          city:
+                            type: string
+                          country:
+                            type: string
+                          line1:
+                            type: string
+                          line2:
+                            type: string
+                          postalCode:
+                            type: string
+                          state:
+                            type: string
+                        type: object
+                      relationship:
+                        properties:
+                          director:
+                            type: boolean
+                          executive:
+                            type: boolean
+                          owner:
+                            type: boolean
+                          percentOwnership:
+                            type: number
+                          title:
+                            type: string
+                        type: object
+                      ssnLast4:
+                        type: string
+                      verification:
+                        properties:
+                          additionalDocument:
+                            properties:
+                              back:
+                                type: string
+                              front:
+                                type: string
+                            type: object
+                          document:
+                            properties:
+                              back:
+                                type: string
+                              front:
+                                type: string
+                            type: object
+                        type: object
+                    type: object
+                  metadata:
+                    additionalProperties:
+                      type: string
+                    description: Set of [key-value pairs](https://docs.stripe.com/api/metadata)
+                      that you can attach to an object. This can be useful for storing
+                      additional information about the object in a structured format.
+                      Individual keys can be unset by posting an empty value to them.
+                      All keys can be unset by posting an empty value to `metadata`.
+                    type: object
+                  settings:
+                    description: Options for customizing how the account functions
+                      within Stripe.
+                    properties:
+                      bacsDebitPayments:
+                        properties:
+                          displayName:
+                            type: string
+                        type: object
+                      branding:
+                        properties:
+                          icon:
+                            type: string
+                          logo:
+                            type: string
+                          primaryColor:
+                            type: string
+                          secondaryColor:
+                            type: string
+                        type: object
+                      cardIssuing:
+                        properties:
+                          tosAcceptance:
+                            properties:
+                              date:
+                                format: int64
+                                type: integer
+                              ip:
+                                type: string
+                              userAgent:
+                                type: string
+                            type: object
+                        type: object
+                      cardPayments:
+                        properties:
+                          declineOn:
+                            properties:
+                              avsFailure:
+                                type: boolean
+                              cvcFailure:
+                                type: boolean
+                            type: object
+                          statementDescriptorPrefix:
+                            type: string
+                          statementDescriptorPrefixKana:
+                            type: string
+                          statementDescriptorPrefixKanji:
+                            type: string
+                        type: object
+                      invoices:
+                        properties:
+                          hostedPaymentMethodSave:
+                            enum:
+                            - always
+                            - never
+                            - offer
+                            type: string
+                        type: object
+                      payments:
+                        properties:
+                          statementDescriptor:
+                            type: string
+                          statementDescriptorKana:
+                            type: string
+                          statementDescriptorKanji:
+                            type: string
+                        type: object
+                      payouts:
+                        properties:
+                          debitNegativeBalances:
+                            type: boolean
+                          schedule:
+                            properties:
+                              delayDays:
+                                x-kubernetes-preserve-unknown-fields: true
+                              interval:
+                                enum:
+                                - daily
+                                - manual
+                                - monthly
+                                - weekly
+                                type: string
+                              monthlyAnchor:
+                                format: int64
+                                type: integer
+                              monthlyPayoutDays:
+                                items:
+                                  format: int64
+                                  type: integer
+                                type: array
+                              weeklyAnchor:
+                                enum:
+                                - friday
+                                - monday
+                                - saturday
+                                - sunday
+                                - thursday
+                                - tuesday
+                                - wednesday
+                                type: string
+                              weeklyPayoutDays:
+                                items:
+                                  enum:
+                                  - friday
+                                  - monday
+                                  - thursday
+                                  - tuesday
+                                  - wednesday
+                                  type: string
+                                type: array
+                            type: object
+                          statementDescriptor:
+                            type: string
+                        type: object
+                      paypayPayments:
+                        properties:
+                          additionalFiles:
+                            items:
+                              type: string
+                            type: array
+                          goodsType:
+                            enum:
+                            - digital_content
+                            - other
+                            type: string
+                          site:
+                            properties:
+                              inDevelopment:
+                                properties:
+                                  password:
+                                    type: string
+                                  username:
+                                    type: string
+                                required:
+                                - password
+                                type: object
+                              restricted:
+                                properties:
+                                  paymentFlowFile:
+                                    type: string
+                                type: object
+                              type:
+                                enum:
+                                - accessible
+                                - in_development
+                                - restricted
+                                type: string
+                            type: object
+                        type: object
+                      sepaDebitPayments:
+                        properties:
+                          creditorId:
+                            type: string
+                        type: object
+                      treasury:
+                        properties:
+                          tosAcceptance:
+                            properties:
+                              date:
+                                format: int64
+                                type: integer
+                              ip:
+                                type: string
+                              userAgent:
+                                type: string
+                            type: object
+                        type: object
+                    type: object
+                  tosAcceptance:
+                    description: Details on the account's acceptance of the [Stripe
+                      Services Agreement](/connect/updating-accounts#tos-acceptance).
+                      This property can only be updated for accounts where [controller.requirement_collection](/api/accounts/object#account_object-controller-requirement_collection)
+                      is `application`, which includes Custom accounts. This property
+                      defaults to a `full` service agreement when empty.
+                    properties:
+                      date:
+                        format: int64
+                        type: integer
+                      ip:
+                        type: string
+                      serviceAgreement:
+                        type: string
+                      userAgent:
+                        type: string
+                    type: object
+                  type:
+                    description: The `type` parameter is deprecated. Use [`controller`](/api/accounts/create#create_account-controller)
+                      instead to configure dashboard access, fee payer, loss liability,
+                      and requirement collection.
+                    enum:
+                    - custom
+                    - express
+                    - standard
+                    type: string
+                    x-kubernetes-validations:
+                    - message: type is immutable
+                      rule: self == oldSelf
+                type: object
+              managementPolicies:
+                default:
+                - '*'
+                description: |-
+                  THIS IS A BETA FIELD. It is on by default but can be opted out
+                  through a Crossplane feature flag.
+                  ManagementPolicies specify the array of actions Crossplane is allowed to
+                  take on the managed and external resources.
+                  See the design doc for more information: https://github.com/crossplane/crossplane/blob/499895a25d1a1a0ba1604944ef98ac7a1a71f197/design/design-doc-observe-only-resources.md?plain=1#L223
+                  and this one: https://github.com/crossplane/crossplane/blob/444267e84783136daa93568b364a5f01228cacbe/design/one-pager-ignore-changes.md
+                items:
+                  description: |-
+                    A ManagementAction represents an action that the Crossplane controllers
+                    can take on an external resource.
+                  enum:
+                  - Observe
+                  - Create
+                  - Update
+                  - Delete
+                  - LateInitialize
+                  - '*'
+                  type: string
+                type: array
+              providerConfigRef:
+                default:
+                  kind: ClusterProviderConfig
+                  name: default
+                description: |-
+                  ProviderConfigReference specifies how the provider that will be used to
+                  create, observe, update, and delete this managed resource should be
+                  configured.
+                properties:
+                  kind:
+                    description: Kind of the referenced object.
+                    type: string
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - kind
+                - name
+                type: object
+              writeConnectionSecretToRef:
+                description: |-
+                  WriteConnectionSecretToReference specifies the namespace and name of a
+                  Secret to which any connection details for this managed resource should
+                  be written. Connection details frequently include the endpoint, username,
+                  and password required to connect to the managed resource.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                required:
+                - name
+                type: object
+            required:
+            - forProvider
+            type: object
+          status:
+            properties:
+              atProvider:
+                properties:
+                  businessProfile:
+                    description: Business information about the account.
+                    x-kubernetes-preserve-unknown-fields: true
+                  businessType:
+                    description: The business type.
+                    type: string
+                  capabilities:
+                    x-kubernetes-preserve-unknown-fields: true
+                  chargesEnabled:
+                    description: Whether the account can process charges.
+                    type: boolean
+                  company:
+                    x-kubernetes-preserve-unknown-fields: true
+                  controller:
+                    x-kubernetes-preserve-unknown-fields: true
+                  country:
+                    description: The account's country.
+                    type: string
+                  created:
+                    description: Time at which the account was connected. Measured
+                      in seconds since the Unix epoch.
+                    format: int64
+                    type: integer
+                  defaultCurrency:
+                    description: Three-letter ISO currency code representing the default
+                      currency for the account. This must be a currency that [Stripe
+                      supports in the account's country](https://stripe.com/docs/payouts).
+                    type: string
+                  detailsSubmitted:
+                    description: Whether account details have been submitted. Accounts
+                      with Stripe Dashboard access, which includes Standard accounts,
+                      cannot receive payouts before this is true. Accounts where this
+                      is false should be directed to [an onboarding flow](/connect/onboarding)
+                      to finish submitting account details.
+                    type: boolean
+                  email:
+                    description: An email address associated with the account. It's
+                      not used for authentication and Stripe doesn't market to this
+                      field without explicit approval from the platform.
+                    type: string
+                  externalAccounts:
+                    description: External accounts (bank accounts and debit cards)
+                      currently attached to this account. External accounts are only
+                      returned for requests where `controller[is_controller]` is true.
+                    x-kubernetes-preserve-unknown-fields: true
+                  futureRequirements:
+                    x-kubernetes-preserve-unknown-fields: true
+                  groups:
+                    description: The groups associated with the account.
+                    x-kubernetes-preserve-unknown-fields: true
+                  id:
+                    description: Unique identifier for the object.
+                    type: string
+                  individual:
+                    x-kubernetes-preserve-unknown-fields: true
+                  metadata:
+                    additionalProperties:
+                      type: string
+                    description: Set of [key-value pairs](https://docs.stripe.com/api/metadata)
+                      that you can attach to an object. This can be useful for storing
+                      additional information about the object in a structured format.
+                    type: object
+                  object:
+                    description: String representing the object's type. Objects of
+                      the same type share the same value.
+                    type: string
+                  payoutsEnabled:
+                    description: Whether the funds in this account can be paid out.
+                    type: boolean
+                  requirements:
+                    x-kubernetes-preserve-unknown-fields: true
+                  settings:
+                    description: Options for customizing how the account functions
+                      within Stripe.
+                    x-kubernetes-preserve-unknown-fields: true
+                  tosAcceptance:
+                    x-kubernetes-preserve-unknown-fields: true
+                  type:
+                    description: The Stripe account type. Can be `standard`, `express`,
+                      `custom`, or `none`.
+                    type: string
+                type: object
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        LastTransitionTime is the last time this condition transitioned from one
+                        status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        A Message containing details about this condition's last transition from
+                        one status to another, if any.
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        ObservedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      type: integer
+                    reason:
+                      description: A Reason for this condition's last transition from
+                        one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
+                      type: string
+                    type:
+                      description: |-
+                        Type of this condition. At most one of each condition type may apply to
+                        a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+              lastHandledReconcileAt:
+                description: |-
+                  LastHandledReconcileAt holds the value of the most recent
+                  reconcile-requested-at annotation token that the controller has
+                  processed. Users can compare this to the annotation to determine
+                  whether a reconcile request has been handled.
+                type: string
+              observedGeneration:
+                description: |-
+                  ObservedGeneration is the latest metadata.generation
+                  which resulted in either a ready state, or stalled due to error
+                  it can not recover from without human intervention.
+                format: int64
+                type: integer
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

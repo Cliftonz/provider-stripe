@@ -1,0 +1,620 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.20.1
+  name: calculations.tax.stripe.m.clifton.quest
+spec:
+  group: tax.stripe.m.clifton.quest
+  names:
+    categories:
+    - crossplane
+    - managed
+    - stripe
+    kind: Calculation
+    listKind: CalculationList
+    plural: calculations
+    singular: calculation
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
+      type: string
+    - jsonPath: .metadata.annotations.crossplane\.io/external-name
+      name: EXTERNAL-NAME
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          A Tax Calculation allows you to calculate the tax to collect from your customer.
+
+          Related guide: [Calculate tax in your custom payment flow](https://docs.stripe.com/tax/custom)
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              forProvider:
+                properties:
+                  currency:
+                    description: Three-letter [ISO currency code](https://www.iso.org/iso-4217-currency-codes.html),
+                      in lowercase. Must be a [supported currency](https://stripe.com/docs/currencies).
+                    type: string
+                    x-kubernetes-validations:
+                    - message: currency is immutable
+                      rule: self == oldSelf
+                  customer:
+                    description: The ID of an existing customer to use for this calculation.
+                      If provided, the customer's address and tax IDs are copied to
+                      `customer_details`.
+                    type: string
+                    x-kubernetes-validations:
+                    - message: customer is immutable
+                      rule: self == oldSelf
+                  customerDetails:
+                    description: Details about the customer, including address and
+                      tax IDs.
+                    properties:
+                      address:
+                        properties:
+                          city:
+                            type: string
+                          country:
+                            type: string
+                          line1:
+                            type: string
+                          line2:
+                            type: string
+                          postalCode:
+                            type: string
+                          state:
+                            type: string
+                        required:
+                        - country
+                        type: object
+                      addressSource:
+                        enum:
+                        - billing
+                        - shipping
+                        type: string
+                      ipAddress:
+                        type: string
+                      taxIds:
+                        items:
+                          properties:
+                            type:
+                              enum:
+                              - ad_nrt
+                              - ae_trn
+                              - al_tin
+                              - am_tin
+                              - ao_tin
+                              - ar_cuit
+                              - au_abn
+                              - au_arn
+                              - aw_tin
+                              - az_tin
+                              - ba_tin
+                              - bb_tin
+                              - bd_bin
+                              - bf_ifu
+                              - bg_uic
+                              - bh_vat
+                              - bj_ifu
+                              - bo_tin
+                              - br_cnpj
+                              - br_cpf
+                              - bs_tin
+                              - by_tin
+                              - ca_bn
+                              - ca_gst_hst
+                              - ca_pst_bc
+                              - ca_pst_mb
+                              - ca_pst_sk
+                              - ca_qst
+                              - cd_nif
+                              - ch_uid
+                              - ch_vat
+                              - cl_tin
+                              - cm_niu
+                              - cn_tin
+                              - co_nit
+                              - cr_tin
+                              - cv_nif
+                              - de_stn
+                              - do_rcn
+                              - ec_ruc
+                              - eg_tin
+                              - es_cif
+                              - et_tin
+                              - eu_oss_vat
+                              - eu_vat
+                              - fo_vat
+                              - gb_vat
+                              - ge_vat
+                              - gi_tin
+                              - gn_nif
+                              - hk_br
+                              - hr_oib
+                              - hu_tin
+                              - ic_nif
+                              - id_npwp
+                              - il_vat
+                              - in_gst
+                              - is_vat
+                              - it_cf
+                              - jp_cn
+                              - jp_rn
+                              - jp_trn
+                              - ke_pin
+                              - kg_tin
+                              - kh_tin
+                              - kr_brn
+                              - kz_bin
+                              - la_tin
+                              - li_uid
+                              - li_vat
+                              - lk_vat
+                              - ma_vat
+                              - md_vat
+                              - me_pib
+                              - mk_vat
+                              - mr_nif
+                              - mx_rfc
+                              - my_frp
+                              - my_itn
+                              - my_sst
+                              - ng_tin
+                              - no_vat
+                              - no_voec
+                              - np_pan
+                              - nz_gst
+                              - om_vat
+                              - pe_ruc
+                              - ph_tin
+                              - pl_nip
+                              - py_ruc
+                              - ro_tin
+                              - rs_pib
+                              - ru_inn
+                              - ru_kpp
+                              - sa_vat
+                              - sg_gst
+                              - sg_uen
+                              - si_tin
+                              - sn_ninea
+                              - sr_fin
+                              - sv_nit
+                              - th_vat
+                              - tj_tin
+                              - tr_tin
+                              - tw_vat
+                              - tz_vat
+                              - ua_vat
+                              - ug_tin
+                              - us_ein
+                              - uy_ruc
+                              - uz_tin
+                              - uz_vat
+                              - ve_rif
+                              - vn_tin
+                              - za_vat
+                              - zm_tin
+                              - zw_tin
+                              type: string
+                            value:
+                              type: string
+                          required:
+                          - type
+                          - value
+                          type: object
+                        type: array
+                      taxabilityOverride:
+                        enum:
+                        - customer_exempt
+                        - none
+                        - reverse_charge
+                        type: string
+                    type: object
+                    x-kubernetes-validations:
+                    - message: customerDetails is immutable
+                      rule: self == oldSelf
+                  customerRef:
+                    description: A NamespacedReference to a named object.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                      namespace:
+                        description: Namespace of the referenced object
+                        type: string
+                      policy:
+                        description: Policies for referencing.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: |-
+                              Resolution specifies whether resolution of this reference is required.
+                              The default is 'Required', which means the reconcile will fail if the
+                              reference cannot be resolved. 'Optional' means this reference will be
+                              a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: |-
+                              Resolve specifies when this reference should be resolved. The default
+                              is 'IfNotPresent', which will attempt to resolve the reference only when
+                              the corresponding field is not present. Use 'Always' to resolve the
+                              reference on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
+                    required:
+                    - name
+                    type: object
+                  customerSelector:
+                    description: NamespacedSelector selects a namespaced object.
+                    properties:
+                      matchControllerRef:
+                        description: |-
+                          MatchControllerRef ensures an object with the same controller reference
+                          as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
+                        type: object
+                      namespace:
+                        description: Namespace for the selector
+                        type: string
+                      policy:
+                        description: Policies for selection.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: |-
+                              Resolution specifies whether resolution of this reference is required.
+                              The default is 'Required', which means the reconcile will fail if the
+                              reference cannot be resolved. 'Optional' means this reference will be
+                              a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: |-
+                              Resolve specifies when this reference should be resolved. The default
+                              is 'IfNotPresent', which will attempt to resolve the reference only when
+                              the corresponding field is not present. Use 'Always' to resolve the
+                              reference on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
+                    type: object
+                  lineItems:
+                    description: A list of items the customer is purchasing. You can
+                      pass up to 100 line items, or 1,000 if your account has an increased
+                      limit.
+                    items:
+                      properties:
+                        amount:
+                          format: int64
+                          type: integer
+                        metadata:
+                          additionalProperties:
+                            type: string
+                          type: object
+                        performanceLocation:
+                          type: string
+                        product:
+                          type: string
+                        quantity:
+                          format: int64
+                          type: integer
+                        reference:
+                          type: string
+                        taxBehavior:
+                          enum:
+                          - exclusive
+                          - inclusive
+                          type: string
+                        taxCode:
+                          type: string
+                      required:
+                      - amount
+                      type: object
+                    type: array
+                    x-kubernetes-validations:
+                    - message: lineItems is immutable
+                      rule: self == oldSelf
+                  shipFromDetails:
+                    description: Details about the address from which the goods are
+                      being shipped.
+                    properties:
+                      address:
+                        properties:
+                          city:
+                            type: string
+                          country:
+                            type: string
+                          line1:
+                            type: string
+                          line2:
+                            type: string
+                          postalCode:
+                            type: string
+                          state:
+                            type: string
+                        required:
+                        - country
+                        type: object
+                    required:
+                    - address
+                    type: object
+                    x-kubernetes-validations:
+                    - message: shipFromDetails is immutable
+                      rule: self == oldSelf
+                  shippingCost:
+                    description: Shipping cost details to be used for the calculation.
+                    properties:
+                      amount:
+                        format: int64
+                        type: integer
+                      shippingRate:
+                        type: string
+                      taxBehavior:
+                        enum:
+                        - exclusive
+                        - inclusive
+                        type: string
+                      taxCode:
+                        type: string
+                    type: object
+                    x-kubernetes-validations:
+                    - message: shippingCost is immutable
+                      rule: self == oldSelf
+                  taxDate:
+                    description: The calculation uses the tax rules and rates that
+                      are in effect at this timestamp. You can use a date up to 31
+                      days in the past or up to 31 days in the future. If you use
+                      a future date, Stripe doesn't guarantee that the expected tax
+                      rules and rate being used match the actual rules and rate that
+                      will be in effect on that date. We deploy tax changes before
+                      their effective date, but not within a fixed window.
+                    format: int64
+                    type: integer
+                    x-kubernetes-validations:
+                    - message: taxDate is immutable
+                      rule: self == oldSelf
+                required:
+                - currency
+                - lineItems
+                type: object
+              managementPolicies:
+                default:
+                - '*'
+                description: |-
+                  THIS IS A BETA FIELD. It is on by default but can be opted out
+                  through a Crossplane feature flag.
+                  ManagementPolicies specify the array of actions Crossplane is allowed to
+                  take on the managed and external resources.
+                  See the design doc for more information: https://github.com/crossplane/crossplane/blob/499895a25d1a1a0ba1604944ef98ac7a1a71f197/design/design-doc-observe-only-resources.md?plain=1#L223
+                  and this one: https://github.com/crossplane/crossplane/blob/444267e84783136daa93568b364a5f01228cacbe/design/one-pager-ignore-changes.md
+                items:
+                  description: |-
+                    A ManagementAction represents an action that the Crossplane controllers
+                    can take on an external resource.
+                  enum:
+                  - Observe
+                  - Create
+                  - Update
+                  - Delete
+                  - LateInitialize
+                  - '*'
+                  type: string
+                type: array
+              providerConfigRef:
+                default:
+                  kind: ClusterProviderConfig
+                  name: default
+                description: |-
+                  ProviderConfigReference specifies how the provider that will be used to
+                  create, observe, update, and delete this managed resource should be
+                  configured.
+                properties:
+                  kind:
+                    description: Kind of the referenced object.
+                    type: string
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - kind
+                - name
+                type: object
+              writeConnectionSecretToRef:
+                description: |-
+                  WriteConnectionSecretToReference specifies the namespace and name of a
+                  Secret to which any connection details for this managed resource should
+                  be written. Connection details frequently include the endpoint, username,
+                  and password required to connect to the managed resource.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                required:
+                - name
+                type: object
+            required:
+            - forProvider
+            type: object
+          status:
+            properties:
+              atProvider:
+                properties:
+                  amountTotal:
+                    description: Total amount after taxes in the [smallest currency
+                      unit](https://docs.stripe.com/currencies#minor-units).
+                    format: int64
+                    type: integer
+                  currency:
+                    description: Three-letter [ISO currency code](https://www.iso.org/iso-4217-currency-codes.html),
+                      in lowercase. Must be a [supported currency](https://stripe.com/docs/currencies).
+                    type: string
+                  customer:
+                    description: The ID of an existing [Customer](https://docs.stripe.com/api/customers/object)
+                      used for the resource.
+                    type: string
+                  customerDetails:
+                    x-kubernetes-preserve-unknown-fields: true
+                  expiresAt:
+                    description: Timestamp of date at which the tax calculation will
+                      expire.
+                    format: int64
+                    type: integer
+                  id:
+                    description: Unique identifier for the calculation.
+                    type: string
+                  lineItems:
+                    description: The list of items the customer is purchasing.
+                    x-kubernetes-preserve-unknown-fields: true
+                  livemode:
+                    description: If the object exists in live mode, the value is `true`.
+                      If the object exists in test mode, the value is `false`.
+                    type: boolean
+                  object:
+                    description: String representing the object's type. Objects of
+                      the same type share the same value.
+                    type: string
+                  shipFromDetails:
+                    description: The details of the ship from location, such as the
+                      address.
+                    x-kubernetes-preserve-unknown-fields: true
+                  shippingCost:
+                    description: The shipping cost details for the calculation.
+                    x-kubernetes-preserve-unknown-fields: true
+                  taxAmountExclusive:
+                    description: The amount of tax to be collected on top of the line
+                      item prices.
+                    format: int64
+                    type: integer
+                  taxAmountInclusive:
+                    description: The amount of tax already included in the line item
+                      prices.
+                    format: int64
+                    type: integer
+                  taxBreakdown:
+                    description: Breakdown of individual tax amounts that add up to
+                      the total.
+                    x-kubernetes-preserve-unknown-fields: true
+                  taxDate:
+                    description: The calculation uses the tax rules and rates that
+                      are in effect at this timestamp. You can use a date up to 31
+                      days in the past or up to 31 days in the future. If you use
+                      a future date, Stripe doesn't guarantee that the expected tax
+                      rules and rate being used match the actual rules and rate that
+                      will be in effect on that date. We deploy tax changes before
+                      their effective date, but not within a fixed window.
+                    format: int64
+                    type: integer
+                type: object
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        LastTransitionTime is the last time this condition transitioned from one
+                        status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        A Message containing details about this condition's last transition from
+                        one status to another, if any.
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        ObservedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      type: integer
+                    reason:
+                      description: A Reason for this condition's last transition from
+                        one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
+                      type: string
+                    type:
+                      description: |-
+                        Type of this condition. At most one of each condition type may apply to
+                        a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+              lastHandledReconcileAt:
+                description: |-
+                  LastHandledReconcileAt holds the value of the most recent
+                  reconcile-requested-at annotation token that the controller has
+                  processed. Users can compare this to the annotation to determine
+                  whether a reconcile request has been handled.
+                type: string
+              observedGeneration:
+                description: |-
+                  ObservedGeneration is the latest metadata.generation
+                  which resulted in either a ready state, or stalled due to error
+                  it can not recover from without human intervention.
+                format: int64
+                type: integer
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

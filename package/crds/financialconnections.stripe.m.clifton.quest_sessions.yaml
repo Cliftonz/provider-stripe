@@ -1,0 +1,341 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.20.1
+  name: sessions.financialconnections.stripe.m.clifton.quest
+spec:
+  group: financialconnections.stripe.m.clifton.quest
+  names:
+    categories:
+    - crossplane
+    - managed
+    - stripe
+    kind: Session
+    listKind: SessionList
+    plural: sessions
+    singular: session
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
+      type: string
+    - jsonPath: .metadata.annotations.crossplane\.io/external-name
+      name: EXTERNAL-NAME
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: A Financial Connections Session is the secure way to programmatically
+          launch the client-side Stripe.js modal that lets your users link their accounts.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              forProvider:
+                properties:
+                  accountHolder:
+                    description: The account holder to link accounts for.
+                    properties:
+                      account:
+                        type: string
+                      customer:
+                        type: string
+                      customerAccount:
+                        type: string
+                      type:
+                        enum:
+                        - account
+                        - customer
+                        type: string
+                    required:
+                    - type
+                    type: object
+                    x-kubernetes-validations:
+                    - message: accountHolder is immutable
+                      rule: self == oldSelf
+                  filters:
+                    description: Filters to restrict the kinds of accounts to collect.
+                    properties:
+                      accountSubcategories:
+                        items:
+                          enum:
+                          - checking
+                          - credit_card
+                          - line_of_credit
+                          - mortgage
+                          - savings
+                          type: string
+                        type: array
+                      country:
+                        type: string
+                      requirePaymentMethodSupport:
+                        enum:
+                        - all
+                        - at_least_one
+                        - none
+                        type: string
+                    type: object
+                    x-kubernetes-validations:
+                    - message: filters is immutable
+                      rule: self == oldSelf
+                  limits:
+                    description: Settings for configuring Session-specific limits.
+                    properties:
+                      accounts:
+                        format: int64
+                        type: integer
+                    required:
+                    - accounts
+                    type: object
+                    x-kubernetes-validations:
+                    - message: limits is immutable
+                      rule: self == oldSelf
+                  manualEntry:
+                    description: Customize manual entry behavior
+                    properties:
+                      mode:
+                        enum:
+                        - automatic
+                        - disabled
+                        type: string
+                    type: object
+                    x-kubernetes-validations:
+                    - message: manualEntry is immutable
+                      rule: self == oldSelf
+                  permissions:
+                    description: |-
+                      List of data features that you would like to request access to.
+
+                      Possible values are `balances`, `transactions`, `ownership`, and `payment_method`.
+                    items:
+                      enum:
+                      - balances
+                      - ownership
+                      - payment_method
+                      - transactions
+                      type: string
+                    type: array
+                    x-kubernetes-validations:
+                    - message: permissions is immutable
+                      rule: self == oldSelf
+                  prefetch:
+                    description: List of data features that you would like to retrieve
+                      upon account creation.
+                    items:
+                      enum:
+                      - balances
+                      - ownership
+                      - transactions
+                      type: string
+                    type: array
+                    x-kubernetes-validations:
+                    - message: prefetch is immutable
+                      rule: self == oldSelf
+                  returnUrl:
+                    description: For webview integrations only. Upon completing OAuth
+                      login in the native browser, the user will be redirected to
+                      this URL to return to your app.
+                    type: string
+                    x-kubernetes-validations:
+                    - message: returnUrl is immutable
+                      rule: self == oldSelf
+                required:
+                - accountHolder
+                - permissions
+                type: object
+              managementPolicies:
+                default:
+                - '*'
+                description: |-
+                  THIS IS A BETA FIELD. It is on by default but can be opted out
+                  through a Crossplane feature flag.
+                  ManagementPolicies specify the array of actions Crossplane is allowed to
+                  take on the managed and external resources.
+                  See the design doc for more information: https://github.com/crossplane/crossplane/blob/499895a25d1a1a0ba1604944ef98ac7a1a71f197/design/design-doc-observe-only-resources.md?plain=1#L223
+                  and this one: https://github.com/crossplane/crossplane/blob/444267e84783136daa93568b364a5f01228cacbe/design/one-pager-ignore-changes.md
+                items:
+                  description: |-
+                    A ManagementAction represents an action that the Crossplane controllers
+                    can take on an external resource.
+                  enum:
+                  - Observe
+                  - Create
+                  - Update
+                  - Delete
+                  - LateInitialize
+                  - '*'
+                  type: string
+                type: array
+              providerConfigRef:
+                default:
+                  kind: ClusterProviderConfig
+                  name: default
+                description: |-
+                  ProviderConfigReference specifies how the provider that will be used to
+                  create, observe, update, and delete this managed resource should be
+                  configured.
+                properties:
+                  kind:
+                    description: Kind of the referenced object.
+                    type: string
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - kind
+                - name
+                type: object
+              writeConnectionSecretToRef:
+                description: |-
+                  WriteConnectionSecretToReference specifies the namespace and name of a
+                  Secret to which any connection details for this managed resource should
+                  be written. Connection details frequently include the endpoint, username,
+                  and password required to connect to the managed resource.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                required:
+                - name
+                type: object
+            required:
+            - forProvider
+            type: object
+          status:
+            properties:
+              atProvider:
+                properties:
+                  accountHolder:
+                    description: The account holder for whom accounts are collected
+                      in this session.
+                    x-kubernetes-preserve-unknown-fields: true
+                  accounts:
+                    description: The accounts that were collected as part of this
+                      Session.
+                    x-kubernetes-preserve-unknown-fields: true
+                  bankAccountToken:
+                    x-kubernetes-preserve-unknown-fields: true
+                  filters:
+                    x-kubernetes-preserve-unknown-fields: true
+                  id:
+                    description: Unique identifier for the object.
+                    type: string
+                  limits:
+                    x-kubernetes-preserve-unknown-fields: true
+                  livemode:
+                    description: If the object exists in live mode, the value is `true`.
+                      If the object exists in test mode, the value is `false`.
+                    type: boolean
+                  manualEntry:
+                    x-kubernetes-preserve-unknown-fields: true
+                  object:
+                    description: String representing the object's type. Objects of
+                      the same type share the same value.
+                    type: string
+                  permissions:
+                    description: Permissions requested for accounts collected during
+                      this session.
+                    x-kubernetes-preserve-unknown-fields: true
+                  prefetch:
+                    description: Data features requested to be retrieved upon account
+                      creation.
+                    x-kubernetes-preserve-unknown-fields: true
+                  returnUrl:
+                    description: For webview integrations only. Upon completing OAuth
+                      login in the native browser, the user will be redirected to
+                      this URL to return to your app.
+                    type: string
+                type: object
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        LastTransitionTime is the last time this condition transitioned from one
+                        status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        A Message containing details about this condition's last transition from
+                        one status to another, if any.
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        ObservedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      type: integer
+                    reason:
+                      description: A Reason for this condition's last transition from
+                        one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
+                      type: string
+                    type:
+                      description: |-
+                        Type of this condition. At most one of each condition type may apply to
+                        a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+              lastHandledReconcileAt:
+                description: |-
+                  LastHandledReconcileAt holds the value of the most recent
+                  reconcile-requested-at annotation token that the controller has
+                  processed. Users can compare this to the annotation to determine
+                  whether a reconcile request has been handled.
+                type: string
+              observedGeneration:
+                description: |-
+                  ObservedGeneration is the latest metadata.generation
+                  which resulted in either a ready state, or stalled due to error
+                  it can not recover from without human intervention.
+                format: int64
+                type: integer
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

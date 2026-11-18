@@ -1,0 +1,187 @@
+# SPDX-FileCopyrightText: 2026 The provider-stripe authors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+name: Spec Tracking
+
+on:
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch: {}
+
+concurrency:
+  group: spec-tracking
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  gate:
+    runs-on: ubuntu-24.04
+    outputs:
+      configured: ${{ steps.check.outputs.configured }}
+    steps:
+      - id: check
+        env:
+          APP_CLIENT_ID: ${{ secrets.APP_CLIENT_ID }}
+          APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
+        run: |
+          missing=""
+          for name in APP_CLIENT_ID APP_PRIVATE_KEY; do
+            [ -n "${!name}" ] || missing="${missing} ${name}"
+          done
+          if [ -z "$missing" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::Skipped: repository secrets not configured:${missing}."
+          fi
+
+  generate:
+    needs: gate
+    if: needs.gate.outputs.configured == 'true'
+    runs-on: ubuntu-24.04
+    outputs:
+      pending: ${{ steps.export.outputs.pending }}
+      changed: ${{ steps.spec.outputs.changed }}
+      tag: ${{ steps.tag.outputs.tag }}
+      api_version: ${{ steps.spec.outputs.new_version }}
+      stripe_go: ${{ steps.stripe_go.outputs.version }}
+      breaking: ${{ steps.breaking.outcome }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: main
+          submodules: true
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        with:
+          go-version-file: go.mod
+      - name: Resolve latest spec release
+        id: tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag=$(gh release view --repo stripe/openapi --json tagName --jq .tagName)
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+      - name: Fetch spec
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: hack/spec-fetch.sh "$TAG" "$RUNNER_TEMP/spec3.json"
+      - name: Detect change
+        id: spec
+        run: hack/spec-changed.sh openapi/spec3.json "$RUNNER_TEMP/spec3.json" >> "$GITHUB_OUTPUT"
+      - name: Resolve stripe-go
+        id: stripe_go
+        if: steps.spec.outputs.changed == 'true'
+        env:
+          API_VERSION: ${{ steps.spec.outputs.new_version }}
+        run: |
+          version=$(hack/stripe-go-for-api.sh "$API_VERSION")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - name: Pin tag
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: echo "$TAG" > openapi/VERSION
+      - name: Regenerate
+        if: steps.spec.outputs.changed == 'true'
+        env:
+          STRIPE_GO: ${{ steps.stripe_go.outputs.version }}
+        run: |
+          cp "$RUNNER_TEMP/spec3.json" openapi/spec3.json
+          go get "github.com/stripe/stripe-go/${STRIPE_GO%%.*}@${STRIPE_GO}"
+          go mod tidy
+          make generate
+      - name: Breaking-change gate
+        id: breaking
+        if: steps.spec.outputs.changed == 'true'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: make crd-breaking-changes
+      - name: Export changes
+        id: export
+        run: |
+          git add -A
+          git diff --cached --binary > "$RUNNER_TEMP/changes.patch"
+          if [ -s "$RUNNER_TEMP/changes.patch" ]; then
+            echo "pending=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: steps.export.outputs.pending == 'true'
+        with:
+          name: changes
+          path: ${{ runner.temp }}/changes.patch
+          overwrite: true
+
+  pr:
+    needs: generate
+    if: needs.generate.outputs.pending == 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        id: app
+        with:
+          client-id: ${{ secrets.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: changes
+          path: ${{ runner.temp }}
+      - name: Check changed paths
+        run: hack/patch-paths.sh "$RUNNER_TEMP/changes.patch"
+      - name: Set git identity
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          SLUG: ${{ steps.app.outputs.app-slug }}
+        run: |
+          id=$(gh api "/users/${SLUG}%5Bbot%5D" --jq .id)
+          git config --global user.name "${SLUG}[bot]"
+          git config --global user.email "${id}+${SLUG}[bot]@users.noreply.github.com"
+      - name: Open PR
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          TAG: ${{ needs.generate.outputs.tag }}
+          API_VERSION: ${{ needs.generate.outputs.api_version }}
+          STRIPE_GO: ${{ needs.generate.outputs.stripe_go }}
+          CHANGED: ${{ needs.generate.outputs.changed }}
+          BREAKING: ${{ needs.generate.outputs.breaking }}
+        run: |
+          if [ "$CHANGED" = true ]; then
+            note="CRD breaking-change gate: ${BREAKING}. On failure, a maintainer adds the breaking-change label to accept it; the next release is then a major bump (minor while 0.x)."
+          else
+            note="Spec bytes unchanged; only openapi/VERSION moves."
+          fi
+          hack/open-pr.sh "$TAG" "$RUNNER_TEMP/changes.patch" \
+            "Stripe spec ${TAG} (API version ${API_VERSION}) from https://github.com/stripe/openapi/releases/tag/${TAG}, with github.com/stripe/stripe-go ${STRIPE_GO:-unchanged}.
+
+          ${note}"
+
+  report:
+    needs: [generate, pr]
+    if: failure()
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        id: app
+        with:
+          client-id: ${{ secrets.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Open failure issue
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          TITLE: "${{ needs.generate.outputs.tag && format('Stripe spec {0}: spec tracking', needs.generate.outputs.tag) || 'Stripe spec tracking: tag resolution' }}"
+        run: hack/failure-issue.sh "$TITLE"
